@@ -11,8 +11,12 @@ target_link_libraries(parser_test
     frontend
 )
 
+# 使用相对路径，增强可移植性
+set(PROJECT_ROOT_DIR ${CMAKE_SOURCE_DIR}/../../..)
+set(TEST_FILE ${PROJECT_ROOT_DIR}/functional/functional/03_arr_defn2.sy)
+
 # 添加测试用例
-add_test(NAME parser_basic_test
-         COMMAND parser_test ${CMAKE_CURRENT_SOURCE_DIR}/test_cases/basic.sy)
+add_test(NAME parser
+         COMMAND parser_test ${TEST_FILE})
 
 # 添加更多测试... 
