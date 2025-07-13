@@ -18,3 +18,8 @@ Makefile
 
 # 测试生成的文件
 parser_test 
+
+compile_commands.json
+
+.cache/
+.xmake/

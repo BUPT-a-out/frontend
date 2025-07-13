@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "AST.h"
+#include "symbol_table.h"
 
 extern FILE* yyin;
 extern int yyparse(void);
