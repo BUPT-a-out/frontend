@@ -1,13 +1,13 @@
 target("parser_test")
     set_kind("binary")
-    set_languages("c11")
+    set_languages("c11", "c++17")
     
-    add_files("parser_test.c")
+    add_files("parser_test.cpp")
     
     add_deps("frontend")
     
     set_warnings("all")
-    add_cflags("-Wall", "-Wextra")
+    add_cxflags("-Wall", "-Wextra")
     
     if is_mode("debug") then
         add_cflags("-g", "-O0")
@@ -44,12 +44,36 @@ task("test")
             return
         end
         
-        task.run("build", {target = "parser_test"})
+        local main_project_dir = os.scriptdir()
+        while main_project_dir and main_project_dir ~= "/" do
+            if os.isfile(path.join(main_project_dir, "xmake.lua")) and 
+               os.isdir(path.join(main_project_dir, "modules", "frontend")) then
+                break
+            end
+            main_project_dir = path.directory(main_project_dir)
+        end
+        
+        if not main_project_dir or main_project_dir == "/" then
+            print("Error: Could not find main project directory")
+            return
+        end
+        
+        local current_dir = os.curdir()
+        os.cd(main_project_dir)
+        
+        print("Building parser_test from main project directory...")
+        local ok, outdata, errdata = os.iorunv("xmake", {"build", "parser_test"})
+        if not ok then
+            print("Build failed:")
+            if errdata then print(errdata) end
+            os.cd(current_dir)
+            return
+        end
         
         if not path.is_absolute(sy_file) then
-            sy_file = path.absolute(sy_file)
+            sy_file = path.absolute(sy_file, current_dir)
         end
         
         print("Running test with file: " .. sy_file)
-        os.exec("xmake run parser_test " .. sy_file)
+        os.exec("xmake run parser_test \"" .. sy_file .. "\"")
     end)

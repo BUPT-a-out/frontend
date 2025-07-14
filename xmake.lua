@@ -1,5 +1,25 @@
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 
+package("midend")
+    set_description("Compiler middle-end")
+    set_urls("https://github.com/BUPT-a-out/midend.git")
+
+    on_install("linux", "macosx", "windows", function (package)
+        import("package.tools.xmake").install(package)
+    end)
+package_end()
+
+
+if os.isdir(path.join(path.directory(os.scriptdir()), "midend")) then
+    add_deps("midend")
+else
+    add_requires("midend main", {
+        system = false,
+        verify = false
+    })
+    add_packages("midend")
+end
+
 target("bison_gen")
     set_kind("phony")
     
@@ -54,11 +74,11 @@ target("flex_gen")
 
 target("frontend")
     set_kind("static")
-    set_languages("c11")
+    set_languages("c11", "c++17")
     
     add_deps("flex_gen")
     
-    add_files("src/AST.c", "src/symbol_table.c")
+    add_files("src/AST.c", "src/symbol_table.c", "src/ir_gen.cpp")
     
     -- Generate files in config phase if they don't exist
     on_config(function (target)
