@@ -9,8 +9,7 @@ package("midend")
     end)
 package_end()
 
-
-if os.isfile(path.join(path.directory(os.scriptdir()), "..", "xmake.lua")) then
+if os.projectdir() ~= os.scriptdir() then
     add_deps("midend")
 else
     add_requires("midend main", {
@@ -182,4 +181,40 @@ task("clean")
         end
         
         print("Clean completed!")
+    end)
+
+
+task("parse")
+    set_menu {
+        usage = "xmake parse <file.sy>",
+        description = "Run parser test with SysY file",
+        options = {
+            {nil, "sy_file", "v", nil, "测试文件"},
+        }
+    }
+    
+    on_run(function ()
+        import("core.base.option")
+        import("core.base.task")
+        import("core.project.project")
+        
+        local file = option.get("sy_file")
+        if not file then
+            print("Error: Please specify a SysY file to test")
+            print("Usage: xmake parse <file.sy>")
+            return
+        end
+
+        local sy_file = path.absolute(file, os.workingdir())
+        
+        if not os.isfile(sy_file) then
+            print("Error: File not found: " .. sy_file)
+            return
+        end
+        
+        task.run("build", {target="parser"})
+        
+        print("Running test with file: " .. sy_file)
+        local target = project.target("parser")
+        os.execv(target:targetfile(), {sy_file})
     end)

@@ -9,5 +9,5 @@ xmake
 ## Test
 
 ```
-xmake test <file.sy>
+xmake parse <file.sy>
 ```
