@@ -10,7 +10,7 @@ package("midend")
 package_end()
 
 
-if os.isdir(path.join(path.directory(os.scriptdir()), "midend")) then
+if os.isfile(path.join(path.directory(os.scriptdir()), "..", "xmake.lua")) then
     add_deps("midend")
 else
     add_requires("midend main", {
@@ -80,7 +80,6 @@ target("frontend")
     
     add_files("src/AST.c", "src/symbol_table.c", "src/ir_gen.cpp")
     
-    -- Generate files in config phase if they don't exist
     on_config(function (target)
         local script_dir = os.scriptdir()
         local srcdir = path.join(script_dir, "src")
@@ -89,13 +88,11 @@ target("frontend")
         local yacc_output = path.join(srcdir, "y.tab.c")
         local flex_output = path.join(srcdir, "lex.yy.c")
         
-        -- If files don't exist, generate them immediately
         if not os.isfile(yacc_output) or not os.isfile(flex_output) then
             print("Pre-generating parser files...")
             
             import("lib.detect.find_tool")
             
-            -- Generate bison files
             if not os.isfile(yacc_output) then
                 local bison = find_tool("bison")
                 if bison then
@@ -113,7 +110,6 @@ target("frontend")
                 end
             end
             
-            -- Generate flex files
             if not os.isfile(flex_output) then
                 local flex = find_tool("flex")
                 if flex then
@@ -123,10 +119,8 @@ target("frontend")
                 end
             end
             
-            -- Add the generated files to the target
             target:add("files", yacc_output, flex_output)
         else
-            -- Files exist, add them normally
             target:add("files", yacc_output, flex_output)
         end
     end)
