@@ -3,6 +3,7 @@
     #include <stdlib.h>
     #include <string.h>
     #include "y.tab.h"
+    #include "utils.h"
 %}
 
 LETTER              [a-zA-Z]
@@ -55,17 +56,17 @@ FLOAT_CONST         {DEC_FLOAT_CONST}|{HEX_FLOAT_CONST}
     "return"        { return RETURN; }
 
     {IDENTIFIER}    {
-        yylval.str = strdup(yytext);
+        yylval.str = my_strdup(yytext);
         return IDENTIFIER;
     }
 
     {INT_CONST}     {
-        yylval.str = strdup(yytext);
+        yylval.str = my_strdup(yytext);
         return INT_CONST;
     }
 
     {FLOAT_CONST}   {
-        yylval.str = strdup(yytext);
+        yylval.str = my_strdup(yytext);
         return FLOAT_CONST;
     }
 

@@ -1,102 +1,111 @@
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <stdarg.h>
 #include <stdbool.h>
 
-#include "symbol.h"
+#include "symbol_table.h"
 
-// --- Enum for Node Types ---
+// --- AST ---
+
+// Enum for Node Types
 typedef enum {
     // Top-level
     NODE_ROOT,
-    NODE_EMPTY,
-    NODE_LIST,
 
-    // Declarations
-    NODE_CONST_DECL,
-    NODE_VAR_DECL,
-    NODE_FUNC_DEF,
-    NODE_FUNC_HEAD,
-    
-    // Definitions
-    NODE_CONST_DEF,
-    NODE_VAR_DEF,
-    NODE_PARAM_LIST,
+    // Placeholding
+    NODE_EMPTY,
+
+    // List of anything
+    NODE_LIST,
 
     // Types
     NODE_TYPE,
+
+    // Definitions
+    NODE_VAR_DEF,
+    NODE_CONST_VAR_DEF,
+    NODE_ARRAY_DEF,
+    NODE_CONST_ARRAY_DEF,
+    NODE_ARRAY_INIT_LIST,
+    NODE_CONST_ARRAY_INIT_LIST,
+    NODE_FUNC_DEF,
 
     // Statements
     NODE_ASSIGN_STMT,
     NODE_IF_STMT,
     NODE_WHILE_STMT,
-    NODE_BLOCK_STMT,
     NODE_RETURN_STMT,
     NODE_BREAK_STMT,
     NODE_CONTINUE_STMT,
-    NODE_EXPR_STMT,
 
     // Expressions
-    NODE_BINARY_OP,
-    NODE_UNARY_OP,
-    NODE_FUNC_CALL,
-    NODE_ARG_LIST,
+    NODE_CONST,
+    NODE_VAR,
+    NODE_CONST_VAR,
     NODE_ARRAY_ACCESS,
-    NODE_FUNC_F_PARAMS,
-    NODE_FUNC_R_PARAMS,
-    NODE_CONST_ARRAY_INIT_LIST,
-    NODE_ARRAY_INIT_LIST,
-    NODE_ARRAY_IDENT,
-    NODE_CONST_ARRAY_IDENT,
+    NODE_FUNC_CALL,
+    NODE_UNARY_OP,
+    NODE_BINARY_OP,
 
-    // Literals & identifiers
-    NODE_IDENT,
-    NODE_INT_CONST,
-    NODE_FLOAT_CONST,
-
+    // Don't change the type, used in function set_ast_node_data()
+    HOLD_NODETYPE,
 } NodeType;
 
+// Node Data
+typedef union {
+    SymbolPtr symb_ptr;
+    int direct_int;
+    float direct_float;
+    char* direct_str;
+    DataType data_type;
+} NodeData;
 
-// --- AST Node Structure ---
+typedef enum {
+    NO_DATA,
+    SYMB_DATA,
+    INT_DATA,
+    FLOAT_DATA,
+    STRING_DATA,
+    TYPE_DATA,
+
+    // Like HOLD_NODETYPE
+    HOLD_NODEDATATYPE,
+} NodeDataType;
+
+// AST Node Structure
 typedef struct ASTNode {
     NodeType node_type;
-    char* value;
+    char* name;
     int lineno;
-    
+
+    NodeData data;
+    NodeDataType data_type;
+
     struct ASTNode** children;
     int child_count;
     int child_capacity;
+} ASTNode, *ASTNodePtr;
 
-    int symb_id;
-    SymbolPtr symb_ptr;
-    char* data_type;
-} ASTNode;
+// - AST Create/Delete Functions -
 
-typedef ASTNode* ASTNodePtr;
-
-
-// --- AST Creation/Deletion Functions ---
-ASTNodePtr create_ast_node(NodeType type, const char* value, int num_children, ...);
-ASTNodePtr create_leaf(NodeType type, const char* value);
-void add_child(ASTNodePtr parent, ASTNodePtr child);
+// Create AST node and set its data_type to NO_DATA
+ASTNodePtr create_ast_node(NodeType type, const char* name, int lineno,
+                           int num_children, ...);
+// Delete AST node and its children recursively
 void free_ast(ASTNodePtr node);
 
+// - AST Edit Functions -
 
-// --- AST Traversal/Printing Functions ---
-void print_ast(ASTNodePtr node, int level);
+// Set AST's node data (except data about children)
+void set_ast_node_data(ASTNodePtr node, NodeType type, const char* name,
+                       NodeData data, NodeDataType data_type, int lineno);
+// Add child (pass NULL child automatically)
+void add_child(ASTNodePtr parent, ASTNodePtr child);
+// Add src's children to des and set src's children to NULL
+void shift_child(ASTNodePtr src, ASTNodePtr des);
+
+// - Debugging -
+
+// Helper to get string representation of NodeType
 const char* node_type_to_string(NodeType type);
-
-// --- Semantic/Symbol Functions (might move) ---
-void set_node_symbol(ASTNodePtr node, SymbolPtr symbol);
-
-
-#ifdef __cplusplus
-}
-#endif
+void print_ast(ASTNodePtr node, int level);
