@@ -1,17 +1,3 @@
-local script_dir = os.scriptdir()
-local lydir = path.join(script_dir, "flex_yacc")
-local srcdir = path.join(script_dir, "src")
-local incdir = path.join(script_dir, "include")
-
--- Bison相关的文件路径
-local yacc_input = path.join(lydir, "sysy_yacc.y")
-local yacc_output = path.join(srcdir, "y.tab.c")
-local yacc_header = path.join(incdir, "y.tab.h")
-
--- Flex相关的文件路径
-local flex_input = path.join(lydir, "sysy_flex.l")
-local flex_output = path.join(srcdir, "lex.yy.c")
-
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 
 package("midend")
@@ -43,6 +29,15 @@ target("bison_gen")
         if not bison then
             raise("bison not found, please install bison")
         end
+
+        local script_dir = os.scriptdir()
+        local lydir = path.join(script_dir, "flex_yacc")
+        local srcdir = path.join(script_dir, "src")
+        local incdir = path.join(script_dir, "include")
+        
+        local yacc_input = path.join(lydir, "sysy_yacc.y")
+        local yacc_output = path.join(srcdir, "y.tab.c")
+        local yacc_header = path.join(incdir, "y.tab.h")
         
         if not os.isfile(yacc_output) or os.mtime(yacc_input) > os.mtime(yacc_output) then
             print("Generating parser with bison...")
@@ -67,6 +62,13 @@ target("flex_gen")
         if not flex then
             raise("flex not found, please install flex")
         end
+
+        local script_dir = os.scriptdir()
+        local lydir = path.join(script_dir, "flex_yacc")
+        local srcdir = path.join(script_dir, "src")
+
+        local flex_input = path.join(lydir, "sysy_flex.l")
+        local flex_output = path.join(srcdir, "lex.yy.c")
         
         if not os.isfile(flex_output) or os.mtime(flex_input) > os.mtime(flex_output) then
             print("Generating lexer with flex...")
@@ -83,15 +85,25 @@ target("frontend")
     add_files("src/utils.c", "src/AST.c", "src/symbol_table.c", "src/ir_gen.cpp")
     
     on_config(function (target)
+        local script_dir = os.scriptdir()
+        local lydir = path.join(script_dir, "flex_yacc")
+        local srcdir = path.join(script_dir, "src")
+        local incdir = path.join(script_dir, "include")
+        
+        local yacc_output = path.join(srcdir, "y.tab.c")
+        local flex_output = path.join(srcdir, "lex.yy.c")
+        
         if not os.isfile(yacc_output) or not os.isfile(flex_output) then
             print("Pre-generating parser files...")
             
             import("lib.detect.find_tool")
             
-            -- Generate bison files
             if not os.isfile(yacc_output) then
                 local bison = find_tool("bison")
                 if bison then
+                    local yacc_input = path.join(lydir, "sysy_yacc.y")
+                    local yacc_header = path.join(incdir, "y.tab.h")
+                    
                     os.mkdir(incdir)
                     os.execv(bison.program, {"-d", "-o", yacc_output, yacc_input})
                     
@@ -103,19 +115,17 @@ target("frontend")
                 end
             end
             
-            -- Generate flex files
             if not os.isfile(flex_output) then
                 local flex = find_tool("flex")
                 if flex then
+                    local flex_input = path.join(lydir, "sysy_flex.l")
                     os.execv(flex.program, {"-o", flex_output, flex_input})
                     print("Generated lexer files")
                 end
             end
             
-            -- Add the generated files to the target
             target:add("files", yacc_output, flex_output)
         else
-            -- Files exist, add them normally
             target:add("files", yacc_output, flex_output)
         end
     end)
@@ -150,11 +160,13 @@ task("clean")
     on_run(function ()
         import("core.base.task")
         
+        local script_dir = os.scriptdir()
+        
         -- Generated files to clean
         local generated_files = {
-            flex_output,
-            yacc_output,
-            yacc_header
+            path.join(script_dir, "src", "lex.yy.c"),
+            path.join(script_dir, "src", "y.tab.c"),
+            path.join(script_dir, "include", "y.tab.h")
         }
         
         -- Build directory
@@ -175,4 +187,39 @@ task("clean")
         end
         
         print("Clean completed!")
+    end)
+
+task("parse")
+    set_menu {
+        usage = "xmake parse <file.sy>",
+        description = "Run parser test with SysY file",
+        options = {
+            {nil, "sy_file", "v", nil, "测试文件"},
+        }
+    }
+    
+    on_run(function ()
+        import("core.base.option")
+        import("core.base.task")
+        import("core.project.project")
+        
+        local file = option.get("sy_file")
+        if not file then
+            print("Error: Please specify a SysY file to test")
+            print("Usage: xmake parse <file.sy>")
+            return
+        end
+
+        local sy_file = path.absolute(file, os.workingdir())
+        
+        if not os.isfile(sy_file) then
+            print("Error: File not found: " .. sy_file)
+            return
+        end
+        
+        task.run("build", {target="parser"})
+        
+        print("Running test with file: " .. sy_file)
+        local target = project.target("parser")
+        os.execv(target:targetfile(), {sy_file})
     end)

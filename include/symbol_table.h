@@ -62,7 +62,7 @@ typedef struct Symbol {
 
 // The global symbol table storing all symbols
 typedef struct SymbolTable {
-    Symbol* symbols;
+    Symbol** symbols;
     int symb_count;
     int symb_capacity;
 } SymbolTable;
@@ -103,7 +103,7 @@ typedef struct ScopeStack {
 
 // Symbol Table and Scope Management
 void init_symbol_management();
-void destroy_symbol_management();
+void free_symbol_management();
 
 void enter_scope();
 void exit_scope();

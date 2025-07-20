@@ -1,51 +1,29 @@
 #include <cstdio>
 #include <cstdlib>
-#include <iostream>
+#include <memory>
 
 #include "IR/Module.h"
 #include "IR/IRPrinter.h"
 
-extern "C" {
-#include "y.tab.h"
-#include "AST.h"
-#include "symbol_table.h"
-}
-
 #include "ir_gen.h"
 
-extern FILE* yyin;
-extern int yyparse(void);
-extern ASTNodePtr root;
+void test();
 
 int main(int argc, char **argv) {
+    FILE* file_in = nullptr;
     if (argc > 1) {  
-        yyin = fopen(argv[1], "r");
-        if (!yyin) {  
+        file_in = fopen(argv[1], "r");
+        if (!file_in) {  
             perror(argv[1]);  
             return 1;  
         }  
     } else {
-        yyin = stdin;
+        file_in = stdin;
     }
 
-    init_symbol_management();
+    generate_IR(file_in);
+    // test();
 
-    if (yyparse() == 0) {
-        printf("Parsing completed successfully.\n\n");
-        printf("--- Abstract Syntax Tree ---\n");
-        print_ast(root, 0);
-        print_symbol_table();
-    } else {
-        printf("Parsing failed.\n");
-    }
-
-    if (root) {
-        free_ast(root);
-    }
-    
-    destroy_symbol_management();
-
-    if (yyin && yyin != stdin) fclose(yyin);
-
+    if (file_in && file_in != stdin) fclose(file_in);
     return 0;
 }

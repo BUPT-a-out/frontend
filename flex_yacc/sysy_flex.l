@@ -6,6 +6,8 @@
     #include "utils.h"
 %}
 
+%option noinput nounput
+
 LETTER              [a-zA-Z]
 DEC_DIGIT           [0-9]
 NZ_DEC_DIGIT        [1-9]

@@ -16,7 +16,7 @@ void init_symbol_management() {
     permanent_table.symb_count = 0;
     permanent_table.symb_capacity = 64;
     permanent_table.symbols =
-        (Symbol*)malloc(permanent_table.symb_capacity * sizeof(Symbol));
+        (Symbol**)malloc(permanent_table.symb_capacity * sizeof(SymbolPtr));
 
     scope_stack.top = -1;
     scope_stack.capacity = 16;
@@ -26,10 +26,11 @@ void init_symbol_management() {
     enter_scope();
 }
 
-void destroy_symbol_management() {
+void free_symbol_management() {
     // Free permanent table
     for (int i = 0; i < permanent_table.symb_count; i++) {
-        free(permanent_table.symbols[i].name);
+        free(permanent_table.symbols[i]->name);
+        free(permanent_table.symbols[i]);
         // Note: other pointers inside symbol might need freeing depending on
         // implementation
     }
@@ -90,7 +91,7 @@ SymbolPtr lookup_symbol_in_scope(const char* name, Scope* scope) {
     ScopeEntry* entry = scope->entries[index];
     while (entry) {
         if (strcmp(entry->name, name) == 0) {
-            return &permanent_table.symbols[entry->symbol_id];
+            return permanent_table.symbols[entry->symbol_id];
         }
         entry = entry->next;
     }
@@ -117,18 +118,19 @@ SymbolPtr define_symbol(const char* name, SymbolType sym_type,
     // Add to permanent table
     if (permanent_table.symb_count >= permanent_table.symb_capacity) {
         permanent_table.symb_capacity *= 2;
-        permanent_table.symbols =
-            (Symbol*)realloc(permanent_table.symbols,
-                             permanent_table.symb_capacity * sizeof(Symbol));
+        permanent_table.symbols = (Symbol**)realloc(
+            permanent_table.symbols,
+            permanent_table.symb_capacity * sizeof(SymbolPtr));
     }
 
-    SymbolPtr new_sym = &permanent_table.symbols[permanent_table.symb_count];
+    SymbolPtr new_sym = (SymbolPtr)malloc(sizeof(Symbol));
     new_sym->id = permanent_table.symb_count;
     new_sym->name = my_strdup(name);
     new_sym->symbol_type = sym_type;
     new_sym->data_type = data_type;
     new_sym->lineno = lineno;
     new_sym->scope_level = get_current_scope_level();
+    permanent_table.symbols[permanent_table.symb_count] = new_sym;
 
     // Initialize attributes union
     if (sym_type == SYMB_FUNCTION) {
@@ -165,7 +167,7 @@ SymbolPtr lookup_symbol(const char* name) {
 
 SymbolPtr get_symbol_by_id(int id) {
     if (id >= 0 && id < permanent_table.symb_count) {
-        return &permanent_table.symbols[id];
+        return permanent_table.symbols[id];
     }
     return NULL;
 }
@@ -211,10 +213,10 @@ void print_symbol_table() {
     printf(
         "------------------------------------------------------------------\n");
     for (int i = 0; i < permanent_table.symb_count; i++) {
-        SymbolPtr s = &permanent_table.symbols[i];
-        printf("%-5d %-20s %-15s %-10s %-10d\n", s->id, s->name,
-               symbol_type_to_string(s->symbol_type),
-               data_type_to_string(s->data_type), s->scope_level);
+        SymbolPtr sym_ptr = permanent_table.symbols[i];
+        printf("%-5d %-20s %-15s %-10s %-10d\n", sym_ptr->id, sym_ptr->name,
+               symbol_type_to_string(sym_ptr->symbol_type),
+               data_type_to_string(sym_ptr->data_type), sym_ptr->scope_level);
     }
     printf(
         "------------------------------------------------------------------"

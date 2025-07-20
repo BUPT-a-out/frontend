@@ -6,4 +6,5 @@ namespace midend {
 class Module;
 }
 
-std::unique_ptr<midend::Module> generate_test_module();
+// Integrate generator
+std::unique_ptr<midend::Module> generate_IR(FILE* file_in);

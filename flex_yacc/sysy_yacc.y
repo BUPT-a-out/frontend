@@ -48,9 +48,8 @@ file:
     ;
 
 CompUnit:
-    Decl { $$ = create_ast_node(NODE_ROOT, NULL, yylineno, 1, $1); }
-    | FuncDef { $$ = create_ast_node(NODE_ROOT, NULL, yylineno, 1, $1); }
-    | CompUnit Decl { add_child($1, $2); $$ = $1; }
+    /* empty */ { $$ = create_ast_node(NODE_ROOT, NULL, yylineno, 0); }
+    | CompUnit Decl { shift_child($2, $1); free_ast($2); $$ = $1; }
     | CompUnit FuncDef { add_child($1, $2); $$ = $1; }
     ;
 
@@ -85,7 +84,11 @@ ConstDimBrackets:
     ;
 
 ConstDecl:
-    CONST BType ConstDefList ';' { varlist_def($3, $2->data.data_type); $$ = $3; }
+    CONST BType ConstDefList ';' {
+        varlist_def($3, $2->data.data_type);
+        free_ast($2);
+        $$ = $3;
+    }
     ;
 
 ConstDefList:
@@ -114,7 +117,11 @@ ConstInitValList:
     ;
 
 VarDecl:
-    BType VarDefList ';' { varlist_def($2, $1->data.data_type); $$ = $2; }
+    BType VarDefList ';' {
+        varlist_def($2, $1->data.data_type);
+        free_ast($1);
+        $$ = $2;
+    }
     ;
 
 VarDefList:
@@ -194,7 +201,7 @@ BlockEnter:
 
 BlockItem:
     /* empty */  { $$ = create_ast_node(NODE_LIST, "Block", yylineno, 0); }
-    | BlockItem Decl { add_child($1, $2); $$ = $1;}
+    | BlockItem Decl { shift_child($2, $1); free_ast($2); $$ = $1;}
     | BlockItem Stmt { if ($2->child_count) add_child($1, $2); $$ = $1;}
     ;
 
