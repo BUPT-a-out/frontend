@@ -223,3 +223,38 @@ task("parse")
         local target = project.target("parser")
         os.execv(target:targetfile(), {sy_file})
     end)
+
+task("format")
+    set_menu {
+        usage = "xmake format",
+        description = "Check code formatting with clang-format",
+        options = {
+            {'c', "check", "k", false, "Run clang-format in dry-run mode to check formatting without making changes."},
+        }
+    }
+    on_run(function ()
+        import("lib.detect.find_tool")
+        import("core.base.option")
+        local clang_format = find_tool("clang-format-15") or find_tool("clang-format")
+        if not clang_format then
+            raise("clang-format-15 or clang-format is required for formatting")
+        end
+        
+        local cmd = "find . -name '*.cpp' -o -name '*.h' | grep -v build | grep -v googletest | grep -v _deps | xargs " .. clang_format.program
+        if option.get("check") then
+            cmd = cmd .. " --dry-run --Werror"
+        else
+            cmd = cmd .. " -i"
+        end
+        local ok, outdata, errdata = os.iorunv("sh", {"-c", cmd})
+        
+        if not ok then
+            cprint("${red}Code formatting check failed:")
+            if errdata and #errdata > 0 then
+                print(errdata)
+            end
+            os.exit(1)
+        else
+            cprint("${green}All files are properly formatted!")
+        end
+    end)

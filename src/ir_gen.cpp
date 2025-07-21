@@ -29,13 +29,13 @@ extern FILE* yyin;
 extern int yyparse(void);
 extern ASTNodePtr root;
 
-// È«¾Ö±êÊ¶·û£¨º¯Êı¡¢È«¾Ö±äÁ¿£©
+// å…¨å±€æ ‡è¯†ç¬¦ï¼ˆå‡½æ•°ã€å…¨å±€å˜é‡ï¼‰
 std::unordered_map<int, midend::Function*> func_tab;
 
-// IRÁÙÊ±±äÁ¿±àºÅ
+// IRä¸´æ—¶å˜é‡ç¼–å·
 int temp_idx;
 
-// ¸¨Öúº¯Êı£º½«DataType×ª»»ÎªIRÀàĞÍ
+// è¾…åŠ©å‡½æ•°ï¼šå°†DataTypeè½¬æ¢ä¸ºIRç±»å‹
 midend::Type* get_ir_type(midend::Context* ctx, DataType data_type) {
     switch (data_type) {
         case DATA_INT:
@@ -43,17 +43,17 @@ midend::Type* get_ir_type(midend::Context* ctx, DataType data_type) {
         case DATA_FLOAT:
             return ctx->getFloatType();
         case DATA_CHAR:
-            return ctx->getInt32Type();  // Ê¹ÓÃint32´úÌæint8
+            return ctx->getInt32Type();  // ä½¿ç”¨int32ä»£æ›¿int8
         case DATA_BOOL:
             return ctx->getInt1Type();
         case DATA_VOID:
             return ctx->getVoidType();
         default:
-            return ctx->getInt32Type();  // Ä¬ÈÏÊ¹ÓÃint32
+            return ctx->getInt32Type();  // é»˜è®¤ä½¿ç”¨int32
     }
 }
 
-// ¸¨Öúº¯Êı£º´´½¨³£Á¿Öµ
+// è¾…åŠ©å‡½æ•°ï¼šåˆ›å»ºå¸¸é‡å€¼
 midend::Value* create_constant(midend::IRBuilder& builder, NodeData data,
                                NodeDataType data_type) {
     switch (data_type) {
@@ -104,20 +104,20 @@ std::string get_symbol_name(SymbolPtr symbol) {
 
 midend::Value* def_var(midend::IRBuilder& builder, SymbolPtr symbol,
                        std::unordered_map<int, midend::Value*>& local_vars) {
-    // ±äÁ¿Ãû
+    // å˜é‡å
     std::string var_name = get_symbol_name(symbol);
 
-    // »ñÈ¡±äÁ¿ÀàĞÍ
+    // è·å–å˜é‡ç±»å‹
     midend::Type* var_type =
         get_ir_type(builder.getContext(), symbol->data_type);
 
-    // ´´½¨¾Ö²¿±äÁ¿
+    // åˆ›å»ºå±€éƒ¨å˜é‡
     midend::Value* alloca = builder.createAlloca(var_type, nullptr, var_name);
     local_vars[symbol->id] = alloca;
     return alloca;
 }
 
-// µİ¹é´¦ÀíAST½ÚµãµÄº¯Êı£¨´¦Àíº¯ÊıÄÚ²¿µÄÓï¾ä£©
+// é€’å½’å¤„ç†ASTèŠ‚ç‚¹çš„å‡½æ•°ï¼ˆå¤„ç†å‡½æ•°å†…éƒ¨çš„è¯­å¥ï¼‰
 midend::Value* translate_node(
     ASTNodePtr node, midend::IRBuilder& builder, midend::Function* current_func,
     std::unordered_map<int, midend::Value*>& local_vars) {
@@ -125,7 +125,7 @@ midend::Value* translate_node(
 
     switch (node->node_type) {
         case NODE_LIST: {
-            // ÁĞ±í½Úµã£¬´¦ÀíËùÓĞ×Ó½Úµã
+            // åˆ—è¡¨èŠ‚ç‚¹ï¼Œå¤„ç†æ‰€æœ‰å­èŠ‚ç‚¹
             midend::Value* last_value = nullptr;
             for (int i = 0; i < node->child_count; ++i) {
                 last_value = translate_node(node->children[i], builder,
@@ -135,16 +135,16 @@ midend::Value* translate_node(
         }
 
         case NODE_CONST: {
-            // ³£Á¿½Úµã
+            // å¸¸é‡èŠ‚ç‚¹
             return create_constant(builder, node->data, node->data_type);
         }
 
         case NODE_VAR: {
-            // ±äÁ¿½Úµã
+            // å˜é‡èŠ‚ç‚¹
             SymbolPtr symbol = node->data.symb_ptr;
             if (node->data_type != SYMB_DATA && !symbol) return nullptr;
 
-            // ´Ó¾Ö²¿±äÁ¿Ó³ÉäÖĞ²éÕÒ
+            // ä»å±€éƒ¨å˜é‡æ˜ å°„ä¸­æŸ¥æ‰¾
             auto it = local_vars.find(symbol->id);
             if (it != local_vars.end()) {
                 midend::Type* type = it->second->getType();
@@ -158,7 +158,7 @@ midend::Value* translate_node(
         }
 
         case NODE_FUNC_CALL: {
-            // º¯Êıµ÷ÓÃ½Úµã
+            // å‡½æ•°è°ƒç”¨èŠ‚ç‚¹
             SymbolPtr func_sym = node->data.symb_ptr;
             if (node->data_type != SYMB_DATA && !func_sym) return nullptr;
 
@@ -180,7 +180,7 @@ midend::Value* translate_node(
         }
 
         case NODE_BINARY_OP: {
-            // ¶şÔª²Ù×÷½Úµã
+            // äºŒå…ƒæ“ä½œèŠ‚ç‚¹
             if (node->child_count < 2) return nullptr;
 
             midend::Value* left = translate_node(node->children[0], builder,
@@ -195,7 +195,7 @@ midend::Value* translate_node(
         }
 
         case NODE_UNARY_OP: {
-            // Ò»Ôª²Ù×÷½Úµã
+            // ä¸€å…ƒæ“ä½œèŠ‚ç‚¹
             if (node->child_count < 1) return nullptr;
 
             midend::Value* operand = translate_node(node->children[0], builder,
@@ -215,15 +215,15 @@ midend::Value* translate_node(
         }
 
         case NODE_ASSIGN_STMT: {
-            // ¸³ÖµÓï¾ä
+            // èµ‹å€¼è¯­å¥
             if (node->child_count < 2) return nullptr;
 
-            // ×óÖµ£¨±äÁ¿£©
+            // å·¦å€¼ï¼ˆå˜é‡ï¼‰
             ASTNodePtr left_node = node->children[0];
             SymbolPtr symbol = left_node->data.symb_ptr;
             if (left_node->node_type != NODE_VAR || !symbol) return nullptr;
 
-            // ÓÒÖµ£¨±í´ïÊ½£©
+            // å³å€¼ï¼ˆè¡¨è¾¾å¼ï¼‰
             midend::Value* right_value = translate_node(
                 node->children[1], builder, current_func, local_vars);
             if (!right_value) return nullptr;
@@ -231,14 +231,14 @@ midend::Value* translate_node(
             // std::string var_name = left_node->name ? left_node->name : "";
             std::string var_name = get_symbol_name(left_node->data.symb_ptr);
 
-            // ¼ì²éÊÇ·ñÒÑÓĞ¾Ö²¿±äÁ¿
+            // æ£€æŸ¥æ˜¯å¦å·²æœ‰å±€éƒ¨å˜é‡
             auto it = local_vars.find(symbol->id);
             if (it != local_vars.end()) {
-                // ¸üĞÂÏÖÓĞ±äÁ¿
+                // æ›´æ–°ç°æœ‰å˜é‡
                 builder.createStore(right_value, it->second);
                 return right_value;
             } else {
-                // ´´½¨ĞÂµÄ¾Ö²¿±äÁ¿
+                // åˆ›å»ºæ–°çš„å±€éƒ¨å˜é‡
                 midend::Type* var_type = right_value->getType();
                 midend::Value* alloca =
                     builder.createAlloca(var_type, nullptr, var_name);
@@ -249,7 +249,7 @@ midend::Value* translate_node(
         }
 
         case NODE_RETURN_STMT: {
-            // ·µ»ØÓï¾ä
+            // è¿”å›è¯­å¥
             if (node->child_count > 0) {
                 midend::Value* return_value = translate_node(
                     node->children[0], builder, current_func, local_vars);
@@ -268,10 +268,10 @@ midend::Value* translate_node(
             SymbolPtr symbol = node->data.symb_ptr;
             if (node->data_type != SYMB_DATA || !symbol) return nullptr;
 
-            // ´´½¨¾Ö²¿±äÁ¿
+            // åˆ›å»ºå±€éƒ¨å˜é‡
             midend::Value* alloca = def_var(builder, symbol, local_vars);
 
-            // Èç¹ûÓĞ³õÊ¼»¯Öµ£¨µÚÒ»¸ö×Ó½ÚµãÊÇ³£Á¿»ò±í´ïÊ½£©
+            // å¦‚æœæœ‰åˆå§‹åŒ–å€¼ï¼ˆç¬¬ä¸€ä¸ªå­èŠ‚ç‚¹æ˜¯å¸¸é‡æˆ–è¡¨è¾¾å¼ï¼‰
             if (node->child_count > 0) {
                 midend::Value* init_value = translate_node(
                     node->children[0], builder, current_func, local_vars);
@@ -284,7 +284,7 @@ midend::Value* translate_node(
         }
 
         default:
-            // ´¦ÀíÆäËû½ÚµãÀàĞÍ
+            // å¤„ç†å…¶ä»–èŠ‚ç‚¹ç±»å‹
             midend::Value* last_value = nullptr;
             for (int i = 0; i < node->child_count; ++i) {
                 last_value = translate_node(node->children[i], builder,
@@ -304,11 +304,11 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
 
     auto ctx = module->getContext();
 
-    // ´Ó·ûºÅ±íÖĞ»ñÈ¡·µ»ØÀàĞÍºÍº¯ÊıÃû
+    // ä»ç¬¦å·è¡¨ä¸­è·å–è¿”å›ç±»å‹å’Œå‡½æ•°å
     midend::Type* return_type = get_ir_type(ctx, func_sym->data_type);
     std::string func_name = (func_sym->name) ? func_sym->name : "unknown_func";
 
-    // º¯Êı²ÎÊı½Úµã£¨º¯Êı²ÎÊı×÷Îª¾Ö²¿±äÁ¿£©
+    // å‡½æ•°å‚æ•°èŠ‚ç‚¹ï¼ˆå‡½æ•°å‚æ•°ä½œä¸ºå±€éƒ¨å˜é‡ï¼‰
     ASTNodePtr param_node = node->children[0];
     SymbolPtr param_sym;
     std::vector<midend::Type*> param_types;
@@ -320,31 +320,31 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
         param_names.push_back(get_symbol_name(param_sym));
     }
 
-    // ´´½¨º¯ÊıÀàĞÍ
+    // åˆ›å»ºå‡½æ•°ç±»å‹
     midend::FunctionType* func_type =
         midend::FunctionType::get(return_type, param_types);
 
-    // ´´½¨º¯Êı
+    // åˆ›å»ºå‡½æ•°
     midend::Function* func =
         midend::Function::Create(func_type, func_name, param_names, module);
     func_tab[func_sym->id] = func;
 
-    // ´´½¨»ù±¾¿é
+    // åˆ›å»ºåŸºæœ¬å—
     midend::BasicBlock* entry_bb =
         midend::BasicBlock::Create(ctx, "entry", func);
     midend::IRBuilder builder(entry_bb);
 
-    // ÔÚº¯ÊıÌåÄÚ²¿¶¨Òåº¯ÊıĞÎ²Î
+    // åœ¨å‡½æ•°ä½“å†…éƒ¨å®šä¹‰å‡½æ•°å½¢å‚
     std::unordered_map<int, midend::Value*> func_local_vars;
     for (int i = 0; i < param_node->child_count; i++) {
         param_sym = param_node->children[i]->data.symb_ptr;
         func_local_vars[param_sym->id] = func->getArg(i);
     }
 
-    // ´¦Àíº¯ÊıÌå
+    // å¤„ç†å‡½æ•°ä½“
     translate_node(node->children[1], builder, func, func_local_vars);
 
-    // Èç¹ûÃ»ÓĞÏÔÊ½µÄreturnÓï¾ä£¬Ìí¼ÓÒ»¸ö
+    // å¦‚æœæ²¡æœ‰æ˜¾å¼çš„returnè¯­å¥ï¼Œæ·»åŠ ä¸€ä¸ª
     if (!entry_bb->getTerminator()) {
         if (return_type->isVoidType())
             builder.createRetVoid();
@@ -353,14 +353,14 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
     }
 }
 
-// ´Ó¸ù½Úµã¿ªÊ¼·­Òë£¬´¦Àíº¯Êı¶¨Òå
+// ä»æ ¹èŠ‚ç‚¹å¼€å§‹ç¿»è¯‘ï¼Œå¤„ç†å‡½æ•°å®šä¹‰
 std::unique_ptr<midend::Module> translate_root(ASTNodePtr node) {
     auto ctx = new midend::Context();
     auto module = std::make_unique<midend::Module>("main", ctx);
 
     if (!node) return module;
 
-    // ±éÀú¸ù½ÚµãµÄËùÓĞ×Ó½Úµã£¬Ñ°ÕÒº¯Êı¶¨Òå
+    // éå†æ ¹èŠ‚ç‚¹çš„æ‰€æœ‰å­èŠ‚ç‚¹ï¼Œå¯»æ‰¾å‡½æ•°å®šä¹‰
     ASTNodePtr child;
     for (int i = 0; i < node->child_count; ++i) {
         child = node->children[i];
