@@ -360,7 +360,42 @@ std::unique_ptr<midend::Module> translate_root(ASTNodePtr node) {
 
     if (!node) return module;
 
-    // 遍历根节点的所有子节点，寻找函数定义
+    // 先处理全局变量和常量
+    for (int i = 0; i < node->child_count; ++i) {
+        ASTNodePtr child = node->children[i];
+        switch (child->node_type) {
+            case NODE_VAR_DEF:
+            case NODE_CONST_VAR_DEF: {
+                SymbolPtr sym = child->data.symb_ptr;
+                if (!sym) break;
+                midend::Type* var_type = get_ir_type(ctx, sym->data_type);
+                bool is_const = (child->node_type == NODE_CONST_VAR_DEF);
+                // 处理初值
+                midend::Constant* init = nullptr;
+                if (child->child_count > 0 && child->children[0]) {
+                    ASTNodePtr init_node = child->children[0];
+                    if (init_node->node_type == NODE_CONST) {
+                        if (init_node->data_type == INT_DATA) {
+                            init = midend::ConstantInt::get((midend::IntegerType*)var_type, init_node->data.direct_int);
+                        } else if (init_node->data_type == FLOAT_DATA) {
+                            init = midend::ConstantFP::get((midend::FloatType*)var_type, init_node->data.direct_float);
+                        }
+                    }
+                }
+                // linkage: const用internal, 普通变量external
+                auto linkage = is_const ? midend::GlobalVariable::InternalLinkage : midend::GlobalVariable::ExternalLinkage;
+                midend::GlobalVariable::Create(var_type, is_const, linkage, init, get_symbol_name(sym), module.get());
+                break;
+            }
+            case NODE_ARRAY_DEF:
+            case NODE_CONST_ARRAY_DEF:
+                break;
+            default:
+                break;
+        }
+    }
+
+    // 再处理函数定义
     ASTNodePtr child;
     for (int i = 0; i < node->child_count; ++i) {
         child = node->children[i];
@@ -368,14 +403,6 @@ std::unique_ptr<midend::Module> translate_root(ASTNodePtr node) {
             case NODE_FUNC_DEF:
                 temp_idx = 0;
                 translate_func_def(child, module.get());
-                break;
-            case NODE_VAR_DEF:
-                break;
-            case NODE_CONST_VAR_DEF:
-                break;
-            case NODE_ARRAY_DEF:
-                break;
-            case NODE_CONST_ARRAY_DEF:
                 break;
             default:
                 break;

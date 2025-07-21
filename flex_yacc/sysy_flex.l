@@ -4,10 +4,9 @@
     #include <string.h>
     #include "y.tab.h"
     #include "utils.h"
+
     extern int fileno(FILE *stream);
 %}
-
-%option noinput nounput
 
 LETTER              [a-zA-Z]
 DEC_DIGIT           [0-9]

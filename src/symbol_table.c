@@ -208,17 +208,26 @@ const char* data_type_to_string(DataType type) {
 
 void print_symbol_table() {
     printf("\n--- Permanent Symbol Table ---\n");
-    printf("%-5s %-20s %-15s %-10s %-10s\n", "ID", "Name", "Type", "Data Type",
-           "Scope");
+    printf("%-5s %-20s %-15s %-10s %-10s %-10s\n", "ID", "Name", "Type",
+           "Data Type", "Scope", "Dimensions");
     printf(
-        "------------------------------------------------------------------\n");
+        "----------------------------------------------------------------------"
+        "-----\n");
     for (int i = 0; i < permanent_table.symb_count; i++) {
         SymbolPtr sym_ptr = permanent_table.symbols[i];
-        printf("%-5d %-20s %-15s %-10s %-10d\n", sym_ptr->id, sym_ptr->name,
+        printf("%-5d %-20s %-15s %-10s %-10d", sym_ptr->id, sym_ptr->name,
                symbol_type_to_string(sym_ptr->symbol_type),
                data_type_to_string(sym_ptr->data_type), sym_ptr->scope_level);
+        if (sym_ptr->symbol_type == SYMB_ARRAY ||
+            sym_ptr->symbol_type == SYMB_CONST_ARRAY) {
+            for (int j = 0; j < sym_ptr->attributes.array_info.dimensions; j++)
+                printf(" %d", sym_ptr->attributes.array_info.shape[j]);
+        } else {
+            printf(" %-10s", "N/A");
+        }
+        printf("\n");
     }
     printf(
-        "------------------------------------------------------------------"
-        "\n\n");
+        "----------------------------------------------------------------------"
+        "-----\n\n");
 }
