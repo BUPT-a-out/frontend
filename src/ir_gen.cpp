@@ -23,10 +23,10 @@ extern "C" {
 #include "AST.h"
 #include "symbol_table.h"
 #include "y.tab.h"
+extern int yyparse(void);
 }
 
 extern FILE* yyin;
-extern int yyparse(void);
 extern ASTNodePtr root;
 
 // 全局标识符（函数、全局变量）
