@@ -422,14 +422,38 @@ void varlist_def(ASTNodePtr list_root, DataType data_type) {
         }
         SymbolPtr sym = define_symbol(var->name, sym_type, data_type, var->lineno);
         switch (var->node_type) {
+            case NODE_CONST_VAR_DEF:
+                if (var->child_count > 0 && var->children[0]->node_type == NODE_CONST) {
+                    if (var->children[0]->data_type == INT_DATA) {
+                        sym->attributes.const_info.int_value = var->children[0]->data.direct_int;
+                    } else if (var->children[0]->data_type == FLOAT_DATA) {
+                        sym->attributes.const_info.float_value = var->children[0]->data.direct_float;
+                    }
+                }
+                break;
             case NODE_ARRAY_DEF:
             case NODE_CONST_ARRAY_DEF:
                 ASTNodePtr dim = var->children[0];
                 sym->attributes.array_info.dimensions = dim->child_count;
                 sym->attributes.array_info.shape = (int*)malloc(sizeof(int) * dim->child_count);
                 for (int j = 0; j < dim->child_count; ++j) {
-                    if (dim->children[j]->data_type != INT_DATA) break;
-                    sym->attributes.array_info.shape[j] = dim->children[j]->data.direct_int;
+                    ASTNodePtr dim_node = dim->children[j];
+                    int dimension_value = 0;
+                    
+                    if (dim_node->data_type == INT_DATA) {
+                        dimension_value = dim_node->data.direct_int;
+                    } else if (dim_node->node_type == NODE_VAR && dim_node->data_type == SYMB_DATA) {
+                        SymbolPtr var_sym = dim_node->data.symb_ptr;
+                        if (var_sym && var_sym->symbol_type == SYMB_CONST_VAR && var_sym->data_type == DATA_INT) {
+                            dimension_value = var_sym->attributes.const_info.int_value;
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                    
+                    sym->attributes.array_info.shape[j] = dimension_value;
                 }
                 free_ast(dim);
                 var->children[0] = NULL;
