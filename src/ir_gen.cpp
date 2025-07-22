@@ -70,6 +70,98 @@ midend::Type* get_array_type(midend::Context* ctx, DataType base_type,
     return elem_type;
 }
 
+// 辅助函数：计算数组总大小
+int calculate_array_size(midend::Type* type) {
+    if (!type->isArrayType()) return 1;
+    midend::ArrayType* array_type = static_cast<midend::ArrayType*>(type);
+    return array_type->getNumElements() *
+           calculate_array_size(array_type->getElementType());
+}
+
+// 辅助函数：获取多维数组的维度信息
+void get_array_dimensions(midend::Type* type, std::vector<int>& dims) {
+    if (!type->isArrayType()) return;
+    midend::ArrayType* array_type = static_cast<midend::ArrayType*>(type);
+    dims.push_back(array_type->getNumElements());
+    get_array_dimensions(array_type->getElementType(), dims);
+}
+
+// 辅助函数：将扁平索引转换为多维索引
+std::vector<int> flat_to_multi_index(int flat_index,
+                                     const std::vector<int>& dims) {
+    std::vector<int> indices(dims.size());
+    for (int i = dims.size() - 1; i >= 0; i--) {
+        indices[i] = flat_index % dims[i];
+        flat_index /= dims[i];
+    }
+    return indices;
+}
+
+// 辅助函数：处理数组初始化列表（支持扁平和嵌套初始化）
+void process_global_array_init_recursive(
+    ASTNodePtr init_list, midend::Context* ctx, midend::Type* target_type,
+    DataType base_type, std::vector<midend::Constant*>& flat_elements,
+    int& current_pos, const std::vector<int>& target_dims, int current_dim) {
+    if (!init_list || !target_type) return;
+
+    for (int i = 0; i < init_list->child_count; ++i) {
+        ASTNodePtr child = init_list->children[i];
+
+        if (child->node_type == NODE_LIST) {
+            // 嵌套初始化
+            if (current_dim < target_dims.size() - 1) {
+                // 计算子数组的大小
+                int subarray_size = 1;
+                for (int j = current_dim + 1; j < target_dims.size(); j++) {
+                    subarray_size *= target_dims[j];
+                }
+
+                // 对齐到子数组边界
+                if (current_pos % subarray_size != 0) {
+                    current_pos =
+                        ((current_pos / subarray_size) + 1) * subarray_size;
+                }
+
+                int start_pos = current_pos;
+                process_global_array_init_recursive(
+                    child, ctx, target_type, base_type, flat_elements,
+                    current_pos, target_dims, current_dim + 1);
+
+                // 嵌套初始化完成后，移动到下一个子数组的开始位置
+                current_pos = start_pos + subarray_size;
+            }
+        } else if (child->node_type == NODE_CONST) {
+            // 扁平初始化元素
+            if (current_pos < flat_elements.size()) {
+                midend::Type* base_elem_type = target_type;
+                while (base_elem_type->isArrayType()) {
+                    base_elem_type =
+                        static_cast<midend::ArrayType*>(base_elem_type)
+                            ->getElementType();
+                }
+
+                midend::Constant* elem = nullptr;
+                if (base_elem_type->isIntegerType() &&
+                    child->data_type == INT_DATA && base_type == DATA_INT) {
+                    elem = midend::ConstantInt::get(
+                        static_cast<midend::IntegerType*>(base_elem_type),
+                        child->data.direct_int);
+                } else if (base_elem_type->isFloatType() &&
+                           child->data_type == FLOAT_DATA &&
+                           base_type == DATA_FLOAT) {
+                    elem = midend::ConstantFP::get(
+                        static_cast<midend::FloatType*>(base_elem_type),
+                        child->data.direct_float);
+                }
+
+                if (elem) {
+                    flat_elements[current_pos++] = elem;
+                }
+            }
+        }
+    }
+}
+
 // 辅助函数：处理数组初始化列表
 midend::Constant* process_array_init_list(ASTNodePtr init_list,
                                           midend::Context* ctx,
@@ -78,39 +170,63 @@ midend::Constant* process_array_init_list(ASTNodePtr init_list,
     if (!init_list || !target_type || !target_type->isArrayType())
         return nullptr;
 
-    midend::ArrayType* array_type =
-        static_cast<midend::ArrayType*>(target_type);
-    midend::Type* elem_type = array_type->getElementType();
-    std::vector<midend::Constant*> elements;
+    // 如果初始化列表为空，返回nullptr
+    if (init_list->child_count == 0) {
+        return nullptr;
+    }
 
-    for (int i = 0; i < init_list->child_count; ++i) {
-        ASTNodePtr child = init_list->children[i];
-        midend::Constant* elem = nullptr;
+    // 获取基本元素类型
+    midend::Type* base_elem_type = target_type;
+    while (base_elem_type->isArrayType()) {
+        base_elem_type =
+            static_cast<midend::ArrayType*>(base_elem_type)->getElementType();
+    }
 
-        if (child->node_type == NODE_LIST) {
-            elem = process_array_init_list(child, ctx, elem_type, base_type);
-        } else if (child->node_type == NODE_CONST) {
-            if (elem_type->isIntegerType() && child->data_type == INT_DATA &&
-                base_type == DATA_INT) {
-                elem = midend::ConstantInt::get(
-                    static_cast<midend::IntegerType*>(elem_type),
-                    child->data.direct_int);
-            } else if (elem_type->isFloatType() &&
-                       child->data_type == FLOAT_DATA &&
-                       base_type == DATA_FLOAT) {
-                elem = midend::ConstantFP::get(
-                    static_cast<midend::FloatType*>(elem_type),
-                    child->data.direct_float);
+    std::function<midend::Constant*(ASTNodePtr, midend::Type*)>
+        process_init_sparse =
+            [&](ASTNodePtr list, midend::Type* curr_type) -> midend::Constant* {
+        if (!list || !curr_type) return nullptr;
+
+        if (!curr_type->isArrayType()) {
+            if (list->node_type == NODE_CONST) {
+                if (base_elem_type->isIntegerType() &&
+                    list->data_type == INT_DATA && base_type == DATA_INT) {
+                    return midend::ConstantInt::get(
+                        static_cast<midend::IntegerType*>(base_elem_type),
+                        list->data.direct_int);
+                } else if (base_elem_type->isFloatType() &&
+                           list->data_type == FLOAT_DATA &&
+                           base_type == DATA_FLOAT) {
+                    return midend::ConstantFP::get(
+                        static_cast<midend::FloatType*>(base_elem_type),
+                        list->data.direct_float);
+                }
+            }
+            return nullptr;
+        }
+
+        midend::ArrayType* array_type =
+            static_cast<midend::ArrayType*>(curr_type);
+        midend::Type* elem_type = array_type->getElementType();
+        std::vector<midend::Constant*> elements;
+
+        for (int i = 0; i < list->child_count; ++i) {
+            ASTNodePtr child = list->children[i];
+            midend::Constant* elem = process_init_sparse(child, elem_type);
+            if (elem) {
+                elements.push_back(elem);
             }
         }
 
-        if (elem) {
-            elements.push_back(elem);
+        // 如果有元素，创建常量数组
+        if (!elements.empty()) {
+            return midend::ConstantArray::get(array_type, elements);
         }
-    }
 
-    return elements.empty() ? nullptr
-                            : midend::ConstantArray::get(array_type, elements);
+        return nullptr;
+    };
+
+    return process_init_sparse(init_list, target_type);
 }
 
 midend::Value* get_array_element_ptr(
@@ -118,55 +234,124 @@ midend::Value* get_array_element_ptr(
     midend::IRBuilder& builder,
     const std::unordered_map<int, midend::Value*>& local_vars);
 
+midend::Value* translate_node(
+    ASTNodePtr node, midend::IRBuilder& builder, midend::Function* current_func,
+    std::unordered_map<int, midend::Value*>& local_vars);
+
+// 辅助函数：处理局部数组初始化的递归函数
+void process_local_array_init_recursive(
+    ASTNodePtr init_list, SymbolPtr symbol, midend::IRBuilder& builder,
+    std::unordered_map<int, midend::Value*>& local_vars,
+    std::vector<midend::Value*>& init_values, int& current_pos,
+    const std::vector<int>& target_dims, int current_dim) {
+    if (!init_list) return;
+
+    for (int i = 0; i < init_list->child_count; ++i) {
+        ASTNodePtr child = init_list->children[i];
+
+        if (child->node_type == NODE_LIST) {
+            // 嵌套初始化
+            if (current_dim < target_dims.size() - 1) {
+                // 计算子数组的大小
+                int subarray_size = 1;
+                for (int j = current_dim + 1; j < target_dims.size(); j++) {
+                    subarray_size *= target_dims[j];
+                }
+
+                // 对齐到子数组边界
+                if (current_pos % subarray_size != 0) {
+                    current_pos =
+                        ((current_pos / subarray_size) + 1) * subarray_size;
+                }
+
+                int start_pos = current_pos;
+                process_local_array_init_recursive(
+                    child, symbol, builder, local_vars, init_values,
+                    current_pos, target_dims, current_dim + 1);
+
+                // 嵌套初始化完成后，移动到下一个子数组的开始位置
+                current_pos = start_pos + subarray_size;
+            }
+        } else {
+            // 扁平初始化元素
+            if (current_pos < init_values.size()) {
+                midend::Value* init_val = nullptr;
+
+                if (child->node_type == NODE_CONST) {
+                    if (child->data_type == INT_DATA &&
+                        symbol->data_type == DATA_INT) {
+                        init_val = builder.getInt32(child->data.direct_int);
+                    } else if (child->data_type == FLOAT_DATA &&
+                               symbol->data_type == DATA_FLOAT) {
+                        init_val = builder.getFloat(child->data.direct_float);
+                    }
+                } else if (child->node_type == NODE_ARRAY_ACCESS) {
+                    // 处理数组访问表达式
+                    init_val =
+                        translate_node(child, builder, nullptr, local_vars);
+                } else {
+                    // 处理其他表达式
+                    init_val =
+                        translate_node(child, builder, nullptr, local_vars);
+                }
+
+                if (init_val) {
+                    init_values[current_pos++] = init_val;
+                }
+            }
+        }
+    }
+}
+
 // 辅助函数：初始化数组元素
 void initialize_array_elements(
     ASTNodePtr init_list, SymbolPtr symbol, midend::Type* array_type,
     midend::IRBuilder& builder,
     std::unordered_map<int, midend::Value*>& local_vars) {
-    std::function<void(ASTNodePtr, std::vector<int>&, midend::Type*)>
-        init_array = [&](ASTNodePtr list, std::vector<int>& indices,
-                         midend::Type* curr_type) {
-            if (!list || !curr_type || !curr_type->isArrayType()) return;
+    // 获取数组维度信息
+    std::vector<int> dims;
+    get_array_dimensions(array_type, dims);
 
-            midend::ArrayType* arr_type =
-                static_cast<midend::ArrayType*>(curr_type);
-            midend::Type* elem_type = arr_type->getElementType();
+    // 计算总元素数
+    int total_size = calculate_array_size(array_type);
 
-            for (int i = 0; i < list->child_count; ++i) {
-                ASTNodePtr child = list->children[i];
-                indices.push_back(i);
+    // 创建默认值
+    midend::Value* default_value = nullptr;
+    if (symbol->data_type == DATA_INT) {
+        default_value = builder.getInt32(0);
+    } else if (symbol->data_type == DATA_FLOAT) {
+        default_value = builder.getFloat(0.0f);
+    }
 
-                if (child->node_type == NODE_LIST) {
-                    init_array(child, indices, elem_type);
-                } else if (child->node_type == NODE_CONST &&
-                           elem_type->isIntegerType()) {
-                    std::vector<midend::Value*> gep_indices;
-                    for (int idx : indices) {
-                        gep_indices.push_back(builder.getInt32(idx));
-                    }
+    // 初始化所有元素为默认值
+    std::vector<midend::Value*> init_values(total_size, default_value);
 
-                    midend::Value* elem_ptr = get_array_element_ptr(
-                        symbol, gep_indices, builder, local_vars);
+    // 处理初始化列表
+    if (init_list) {
+        int current_pos = 0;
+        process_local_array_init_recursive(init_list, symbol, builder,
+                                           local_vars, init_values, current_pos,
+                                           dims, 0);
+    }
 
-                    if (child->data_type == INT_DATA &&
-                        symbol->data_type == DATA_INT) {
-                        midend::Value* init_val =
-                            builder.getInt32(child->data.direct_int);
-                        builder.createStore(init_val, elem_ptr);
-                    } else if (child->data_type == FLOAT_DATA &&
-                               symbol->data_type == DATA_FLOAT) {
-                        midend::Value* init_val =
-                            builder.getFloat(child->data.direct_float);
-                        builder.createStore(init_val, elem_ptr);
-                    }
-                }
+    // 生成store指令，为每个元素赋值
+    for (int i = 0; i < total_size; i++) {
+        if (init_values[i]) {
+            // 将扁平索引转换为多维索引
+            std::vector<int> multi_indices = flat_to_multi_index(i, dims);
 
-                indices.pop_back();
+            // 创建GEP索引
+            std::vector<midend::Value*> gep_indices;
+            for (int idx : multi_indices) {
+                gep_indices.push_back(builder.getInt32(idx));
             }
-        };
 
-    std::vector<int> indices;
-    init_array(init_list, indices, array_type);
+            // 获取元素指针并存储值
+            midend::Value* elem_ptr =
+                get_array_element_ptr(symbol, gep_indices, builder, local_vars);
+            builder.createStore(init_values[i], elem_ptr);
+        }
+    }
 }
 
 // 辅助函数：创建常量值

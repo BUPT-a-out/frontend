@@ -152,6 +152,50 @@ target("frontend")
         set_symbols("hidden")
         set_optimize("fastest")
     end
+    before_build(function (target)
+        local hooks_dir = path.join(os.scriptdir(), ".git", "hooks")
+        local pre_commit_path = path.join(hooks_dir, "pre-commit")
+        if os.isdir(hooks_dir) then
+            local expected_hook_content = [[#!/bin/sh
+# Auto-generated pre-commit hook by xmake
+# This hook runs tests and formatting checks before committing
+
+echo "Running tests..."
+if ! xmake test; then
+    echo "Tests failed! Commit aborted."
+    exit 1
+fi
+
+echo "Checking code formatting..."
+if ! xmake format --check; then
+    echo "Code formatting check failed! Commit aborted."
+    echo "Please run 'xmake format' to fix formatting issues."
+    exit 1
+fi
+
+echo "All checks passed!"
+]]
+            
+            local should_write = false
+            if not os.isfile(pre_commit_path) then
+                cprint("${yellow}No git pre-commit hook found. Setting up automatically...")
+                should_write = true
+            else
+                local current_content = io.readfile(pre_commit_path)
+                if current_content ~= expected_hook_content then
+                    cprint("${yellow}Existing pre-commit hook differs from expected. Updating...")
+                    should_write = true
+                end
+            end
+            
+            if should_write then
+                io.writefile(pre_commit_path, expected_hook_content)
+                os.exec("chmod +x " .. pre_commit_path)
+                cprint("${green}Git pre-commit hook has been set up automatically!")
+            end
+        end
+    end)
+
 
 if os.isdir(path.join(os.scriptdir(), "tests")) then
     includes("tests/xmake.lua")
@@ -228,6 +272,108 @@ task("parse")
         print("Running test with file: " .. sy_file)
         local target = project.target("parser")
         os.execv(target:targetfile(), {sy_file})
+    end)
+
+task("test")
+    set_menu {
+        usage = "xmake test",
+        description = "Run parser tests on all .sy files in tests/cases/"
+    }
+    
+    on_run(function ()
+        import("core.base.task")
+        import("core.project.project")
+        
+        -- Build parser first
+        task.run("build", {target="parser"})
+        
+        local script_dir = os.scriptdir()
+        local cases_dir = path.join(script_dir, "tests", "cases")
+        
+        if not os.isdir(cases_dir) then
+            print("Error: Test cases directory not found: " .. cases_dir)
+            return
+        end
+        
+        -- Get parser executable path
+        local target = project.target("parser")
+        local parser_exe = target:targetfile()
+        
+        if not os.isfile(parser_exe) then
+            print("Error: Parser executable not found")
+            return
+        end
+        
+        -- Find all .sy files
+        local test_files = {}
+        for _, file in ipairs(os.files(path.join(cases_dir, "*.sy"))) do
+            table.insert(test_files, file)
+        end
+        
+        if #test_files == 0 then
+            print("No test files found in " .. cases_dir)
+            return
+        end
+        
+        print("Running tests...")
+        print("=" .. string.rep("=", 50))
+        
+        local failed_tests = {}
+        local passed_count = 0
+        
+        for _, sy_file in ipairs(test_files) do
+            local basename = path.basename(sy_file)
+            local out_file = path.join(cases_dir, path.basename(sy_file) .. ".out")
+            
+            io.write(string.format("Testing %-30s ... ", basename))
+            io.flush()
+            
+            -- Run parser and capture output
+            local outdata, errdata = os.iorunv(parser_exe, {sy_file})
+            
+            -- Check if .out file exists
+            if os.isfile(out_file) then
+                -- Read expected output
+                local expected = io.readfile(out_file)
+                
+                -- Compare outputs
+                if outdata == expected then
+                    cprint("${green}PASS")
+                    passed_count = passed_count + 1
+                else
+                    cprint("${red}FAIL")
+                    table.insert(failed_tests, basename)
+                    
+                    -- Save actual output for debugging
+                    local actual_file = path.join(cases_dir, basename .. ".actual")
+                    io.writefile(actual_file, outdata)
+                end
+            else
+                -- No .out file, just run to check for crashes
+                if errdata and #errdata > 0 then
+                    cprint("${red}ERROR")
+                    table.insert(failed_tests, basename)
+                else
+                    cprint("${yellow}NO EXPECTED OUTPUT")
+                    -- Create .out file with current output for future use
+                    io.writefile(out_file, outdata)
+                end
+            end
+        end
+        
+        print("=" .. string.rep("=", 50))
+        print(string.format("Tests: %d total, %d passed, %d failed", 
+                           #test_files, passed_count, #failed_tests))
+        
+        if #failed_tests > 0 then
+            cprint("${red}Failed tests:")
+            for _, test in ipairs(failed_tests) do
+                print("  - " .. test)
+            end
+            os.exit(1)
+        else
+            cprint("${green}All tests passed!")
+        end
     end)
 
 task("format")

@@ -1,0 +1,55 @@
+Parsing completed successfully.
+
+--- Abstract Syntax Tree ---
++-- ROOT
+|   +-- FUNC_DEF: main (sym: main, id: 24)
+|   |   +-- LIST: FParams
+|   |   +-- LIST: Block
+|   |   |   +-- VAR_DEF: a (sym: a, id: 25)
+|   |   |   |   +-- CONST (int value: 5)
+|   |   |   +-- RETURN_STMT
+|   |   |   |   +-- VAR (sym: a, id: 25)
+
+--- Permanent Symbol Table ---
+ID    Name                 Type            Data Type  Scope      Shape     
+---------------------------------------------------------------------------
+0     getint               function        int        1          N/A       
+1     getch                function        int        1          N/A       
+2     getfloat             function        float      1          N/A       
+3     getarray             function        int        1          N/A       
+4     array                array           int        2          0
+5     getfarray            function        int        1          N/A       
+6     array                array           float      2          0
+7     putint               function        void       1          N/A       
+8     value                var             int        2          N/A       
+9     putch                function        void       1          N/A       
+10    value                var             int        2          N/A       
+11    putfloat             function        void       1          N/A       
+12    value                var             float      2          N/A       
+13    putarray             function        void       1          N/A       
+14    len                  var             int        2          N/A       
+15    array                array           int        2          0
+16    putfarray            function        void       1          N/A       
+17    len                  var             int        2          N/A       
+18    array                array           float      2          0
+19    putf                 function        void       1          N/A       
+20    format_string        var             char       2          N/A       
+21    value                var             int        2          N/A       
+22    starttime            function        void       1          N/A       
+23    stoptime             function        void       1          N/A       
+24    main                 function        int        1          N/A       
+25    a                    var             int        3          N/A       
+---------------------------------------------------------------------------
+
+--- Generated IR ---
+; ModuleID = 'main'
+
+define i32 @main() {
+entry:
+  %a_25 = alloca i32
+  store i32 5, i32* %a_25
+  %0 = load i32, i32* %a_25
+  ret i32 %0
+}
+
+
