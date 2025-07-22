@@ -6,6 +6,7 @@
     #include "utils.h"
 
     extern int fileno(FILE *stream);
+    extern int yylineno;
 %}
 
 LETTER              [a-zA-Z]
@@ -84,18 +85,19 @@ STRING_CONST        \"([^\\\"]|\\.)*\"
     "/*"            { BEGIN(MULT_LINE_COMMENT_MODE); }
 
     {WHITE_SPACE}   ;
-    {LINE_END}      ;
+    {LINE_END}      { yylineno++; }
     <<EOF>>         { return ENDMARKER; }
     .               ;
 }
 
 <ONE_LINE_COMMENT_MODE>{
-    {LINE_END}      { BEGIN(INITIAL); }
+    {LINE_END}      { yylineno++; BEGIN(INITIAL); }
     <<EOF>>         { return ENDMARKER; }
     .               ;
 }
 
 <MULT_LINE_COMMENT_MODE>{
+    {LINE_END}      { yylineno++; }
     "*/"            { BEGIN(INITIAL); }
     <<EOF>>         { return ENDMARKER; }
     .               ;

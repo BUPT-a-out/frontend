@@ -16,8 +16,9 @@
     extern int yylex(void);
     void yyerror(const char *s);
 
+    SymbolType node_type_to_sym_type(NodeType node_type);
+    void var_def(ASTNodePtr var_node, DataType data_type);
     ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params);
-    void varlist_def(ASTNodePtr list_root, DataType data_type);
     ASTNodePtr get_const_value(ASTNodePtr node);
     ASTNodePtr fold_unary_exp(ASTNodePtr node);
     ASTNodePtr fold_binary_exp(ASTNodePtr node);
@@ -76,18 +77,33 @@ BType:
     ;
 
 DimBrackets:
-    '[' Exp ']' { $$ = create_ast_node(NODE_LIST, "Dims", yylineno, 1, $2); }
+    '[' ']' {
+        NodeData data;
+        data.direct_int = 0;
+        ASTNodePtr first_dim_node = create_ast_node(NODE_CONST, NULL, yylineno, 0);
+        set_ast_node_data(first_dim_node, HOLD_NODETYPE, NULL, data, INT_DATA, -1);
+        $$ = create_ast_node(NODE_LIST, "Dims", yylineno, 1, first_dim_node);
+    }
+    | '[' Exp ']' { $$ = create_ast_node(NODE_LIST, "Dims", yylineno, 1, $2); }
     | DimBrackets '[' Exp ']' { add_child($1, $3); $$ = $1; }
     ;
 
 ConstDimBrackets:
-    '[' ConstExp ']' { $$ = create_ast_node(NODE_LIST, "Dims", yylineno, 1, $2); }
+    '[' ']' {
+        NodeData data;
+        data.direct_int = 0;
+        ASTNodePtr first_dim_node = create_ast_node(NODE_CONST, NULL, yylineno, 0);
+        set_ast_node_data(first_dim_node, HOLD_NODETYPE, NULL, data, INT_DATA, -1);
+        $$ = create_ast_node(NODE_LIST, "Dims", yylineno, 1, first_dim_node);
+    }
+    | '[' ConstExp ']' { $$ = create_ast_node(NODE_LIST, "Dims", yylineno, 1, $2); }
     | ConstDimBrackets '[' ConstExp ']' { add_child($1, $3); $$ = $1; }
     ;
 
 ConstDecl:
     CONST BType ConstDefList ';' {
-        varlist_def($3, $2->data.data_type);
+        for (int i = 0; i < $3->child_count; ++i)
+            var_def($3->children[i], $2->data.data_type);
         free_ast($2);
         $$ = $3;
     }
@@ -120,7 +136,8 @@ ConstInitValList:
 
 VarDecl:
     BType VarDefList ';' {
-        varlist_def($2, $1->data.data_type);
+        for (int i = 0; i < $2->child_count; ++i)
+            var_def($2->children[i], $1->data.data_type);
         free_ast($1);
         $$ = $2;
     }
@@ -174,26 +191,12 @@ FuncFParams:
 
 FuncFParam:
     BType IDENTIFIER {
-        NodeData data;
-        data.symb_ptr = define_symbol($2, SYMB_VAR, $1->data.data_type, yylineno);
-        $$ = create_ast_node(NODE_VAR_DEF, "Param", yylineno, 0);
-        set_ast_node_data($$, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
+        $$ = create_ast_node(NODE_VAR_DEF, $2, yylineno, 0);
+        var_def($$, $1->data.data_type);
     }
-    | BType IDENTIFIER '[' ']' {
-        NodeData data;
-        data.symb_ptr = define_symbol($2, SYMB_ARRAY, $1->data.data_type, yylineno);
-        ASTNodePtr dims_list = create_ast_node(NODE_EMPTY, NULL, yylineno, 0);
-        $$ = create_ast_node(NODE_ARRAY_DEF, "Param", yylineno, 1, dims_list);
-        set_ast_node_data($$, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
-    }
-    | BType IDENTIFIER '[' ']' ConstDimBrackets {
-        NodeData data;
-        data.symb_ptr = define_symbol($2, SYMB_ARRAY, $1->data.data_type, yylineno);
-        ASTNodePtr dims_list = create_ast_node(NODE_EMPTY, NULL, yylineno, 0);
-        $$ = create_ast_node(NODE_ARRAY_DEF, "Param", yylineno, 1, dims_list);
-        shift_child($5, $$);
-        free_ast($5);
-        set_ast_node_data($$, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
+    | BType IDENTIFIER ConstDimBrackets {
+        $$ = create_ast_node(NODE_ARRAY_DEF, $2, yylineno, 1, $3);
+        var_def($$, $1->data.data_type);
     }
     ;
 
@@ -203,8 +206,8 @@ BlockEnter:
 
 BlockItem:
     /* empty */  { $$ = create_ast_node(NODE_LIST, "Block", yylineno, 0); }
-    | BlockItem Decl { shift_child($2, $1); free_ast($2); $$ = $1;}
-    | BlockItem Stmt { if ($2->child_count) add_child($1, $2); $$ = $1;}
+    | BlockItem Decl { shift_child($2, $1); free_ast($2); $$ = $1; }
+    | BlockItem Stmt { if ($2->child_count) add_child($1, $2); $$ = $1; }
     ;
 
 Block:
@@ -274,10 +277,24 @@ LVal:
         }
         NodeData data;
         data.symb_ptr = sym;
-        if (sym->symbol_type == SYMB_VAR)
-            $$ = create_ast_node(NODE_VAR, NULL, yylineno, 0);
-        else if (sym->symbol_type == SYMB_CONST_VAR)
-            $$ = create_ast_node(NODE_CONST_VAR, NULL, yylineno, 0);
+        switch (sym->symbol_type) {
+            case SYMB_VAR:
+                $$ = create_ast_node(NODE_VAR, NULL, yylineno, 0);
+                break;
+            case SYMB_CONST_VAR:
+                $$ = create_ast_node(NODE_CONST_VAR, NULL, yylineno, 0);
+                break;
+            case SYMB_ARRAY:
+                $$ = create_ast_node(NODE_ARRAY, NULL, yylineno, 0);
+                break;
+            case SYMB_CONST_ARRAY:
+                $$ = create_ast_node(NODE_CONST_ARRAY, NULL, yylineno, 0);
+                break;
+            default:
+                yyerror("Invalid symbol type");
+                YYERROR; 
+                break;
+        }
         set_ast_node_data($$, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
     }
     | IDENTIFIER DimBrackets {
@@ -288,8 +305,27 @@ LVal:
         }
         NodeData data;
         data.symb_ptr = sym;
-        set_ast_node_data($2, NODE_ARRAY_ACCESS, NULL, data, SYMB_DATA, yylineno);
+        switch (sym->symbol_type) {
+            case SYMB_ARRAY:
+                set_ast_node_data(
+                    $2, NODE_ARRAY_ACCESS, NULL, data, SYMB_DATA, yylineno);
+                break;
+            case SYMB_CONST_ARRAY:
+                set_ast_node_data(
+                    $2, NODE_CONST_ARRAY_ACCESS, NULL, data, SYMB_DATA, yylineno);
+                break;
+            default:
+                yyerror("Invalid symbol type");
+                YYERROR;
+                break;
+        }
         $$ = $2;
+    }
+    | STRING_CONST {
+        NodeData data;
+        data.direct_str = $1;
+        $$ = create_ast_node(NODE_CONST, NULL, yylineno, 0);
+        set_ast_node_data($$, HOLD_NODETYPE, NULL, data, STRING_DATA, -1);
     }
     ;
 
@@ -344,22 +380,7 @@ UnaryOp:
 FuncRParams:
     /* empty */ { $$ = create_ast_node(NODE_LIST, "RParams", yylineno, 0); }
     | Exp { $$ = create_ast_node(NODE_LIST, "RParams", yylineno, 1, $1); }
-    | STRING_CONST {
-        NodeData data;
-        data.direct_str = $1;
-        ASTNodePtr str_node = create_ast_node(NODE_CONST, NULL, yylineno, 0);
-        set_ast_node_data(str_node, HOLD_NODETYPE, NULL, data, STRING_DATA, -1);
-        $$ = create_ast_node(NODE_LIST, "RParams", yylineno, 1, str_node);
-    }
     | FuncRParams ',' Exp { add_child($1, $3); $$ = $1; }
-    | FuncRParams ',' STRING_CONST {
-        NodeData data;
-        data.direct_str = $3;
-        ASTNodePtr str_node = create_ast_node(NODE_CONST, NULL, yylineno, 0);
-        set_ast_node_data(str_node, HOLD_NODETYPE, NULL, data, STRING_DATA, -1);
-        add_child($1, str_node);
-        $$ = $1;
-    }
     ;
 
 MulExp:
@@ -444,82 +465,59 @@ void yyerror(const char *s) {
     fprintf(stderr, "%d %s\n", yylineno, s);
 }
 
-void varlist_def(ASTNodePtr list_root, DataType data_type) {
-    if (!list_root) return;
-
-    int sym_count = list_root->child_count;
-    NodeData data;
-    SymbolType sym_type;
-    for (int i = 0; i < sym_count; ++i) {
-        ASTNodePtr var = list_root->children[i];
-        switch (var->node_type) {
-            case NODE_VAR_DEF:
-                sym_type = SYMB_VAR;
-                break;
-            case NODE_CONST_VAR_DEF:
-                sym_type = SYMB_CONST_VAR;
-                break;
-            case NODE_ARRAY_DEF:
-                sym_type = SYMB_ARRAY;
-                break;
-            case NODE_CONST_ARRAY_DEF:
-                sym_type = SYMB_CONST_ARRAY;
-                break;
-            default:
-                sym_type = SYMB_UNKNOWN;
-                break;
-        }
-        SymbolPtr sym = define_symbol(var->name, sym_type, data_type, var->lineno);
-        switch (var->node_type) {
-            case NODE_CONST_VAR_DEF:
-                if (var->child_count > 0 && var->children[0]->node_type == NODE_CONST) {
-                    if (var->children[0]->data_type == INT_DATA) {
-                        sym->attributes.const_info.int_value = var->children[0]->data.direct_int;
-                    } else if (var->children[0]->data_type == FLOAT_DATA) {
-                        sym->attributes.const_info.float_value = var->children[0]->data.direct_float;
-                    }
-                }
-                break;
-            case NODE_ARRAY_DEF:
-            case NODE_CONST_ARRAY_DEF:
-                ASTNodePtr dim = var->children[0];
-                int dim_count = dim->child_count;
-                sym->attributes.array_info.dimensions = dim_count;
-                sym->attributes.array_info.shape = (int*)malloc(sizeof(int) * dim_count);
-
-                bool valid = true;
-                for (int j = 0; j < dim_count; ++j) {
-                    ASTNodePtr dim_node = dim->children[j];
-                    int dimension_value = 0;
-
-                    if (dim_node->data_type == INT_DATA) {
-                        dimension_value = dim_node->data.direct_int;
-                    } else if (dim_node->node_type == NODE_VAR && dim_node->data_type == SYMB_DATA) {
-                        SymbolPtr var_sym = dim_node->data.symb_ptr;
-                        if (var_sym && var_sym->symbol_type == SYMB_CONST_VAR && var_sym->data_type == DATA_INT) {
-                            dimension_value = var_sym->attributes.const_info.int_value;
-                        } else {
-                            valid = false;
-                            break;
-                        }
-                    } else {
-                        valid = false;
-                        break;
-                    }
-
-                    sym->attributes.array_info.shape[j] = dimension_value;
-                }
-
-                free_ast(dim);
-                var->children[0] = NULL;
-                // 可根据 valid 变量决定后续处理
-                break;
-            default:
-                break;
-        }
-        data.symb_ptr = sym;
-        set_ast_node_data(var, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
+SymbolType node_type_to_sym_type(NodeType node_type) {
+    switch (node_type) {
+        case NODE_VAR_DEF:
+            return SYMB_VAR;
+        case NODE_CONST_VAR_DEF:
+            return SYMB_CONST_VAR;
+        case NODE_ARRAY_DEF:
+            return SYMB_ARRAY;
+        case NODE_CONST_ARRAY_DEF:
+            return SYMB_CONST_ARRAY;
+        default:
+            return SYMB_UNKNOWN;
     }
+}
+
+void var_def(ASTNodePtr var_node, DataType data_type) {
+    if (!var_node) return;
+
+    NodeData data;
+    SymbolType sym_type = node_type_to_sym_type(var_node->node_type);
+    SymbolPtr sym = define_symbol(
+        var_node->name, sym_type, data_type, var_node->lineno);
+    switch (var_node->node_type) {
+        case NODE_CONST_VAR_DEF:
+            if (var_node->child_count == 0) return;
+            ASTNodePtr init_node = var_node->children[0];
+            if (init_node->data_type == INT_DATA)
+                sym->attributes.const_info.int_value = init_node->data.direct_int;
+            else if (init_node->data_type == FLOAT_DATA)
+                sym->attributes.const_info.float_value = init_node->data.direct_float;
+            break;
+        case NODE_ARRAY_DEF:
+        case NODE_CONST_ARRAY_DEF:
+            ASTNodePtr dim = var_node->children[0];
+            int dim_count = dim->child_count;
+            sym->attributes.array_info.dimensions = dim_count;
+            sym->attributes.array_info.shape = (int*)malloc(sizeof(int) * dim_count);
+
+            for (int j = 0; j < dim_count; ++j) {
+                ASTNodePtr dim_node = dim->children[j];
+                if (dim_node->data_type != INT_DATA) break;
+                sym->attributes.array_info.shape[j] = dim_node->data.direct_int;
+            }
+
+            free_ast(dim);
+            var_node->children[0] = NULL;
+            // 可根据 valid 变量决定后续处理
+            break;
+        default:
+            break;
+    }
+    data.symb_ptr = sym;
+    set_ast_node_data(var_node, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
 }
 
 ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params) {

@@ -109,4 +109,14 @@ void add_runtime_lib_symbols() {
     sym->attributes.func_info.params[1] = param;
     exit_scope();
     // 后续参数为可变参数
+
+    // 12. void starttime()
+    sym = define_symbol("starttime", SYMB_FUNCTION, DATA_VOID, 0);
+    sym->attributes.func_info.param_count = 0;
+    sym->attributes.func_info.params = NULL;
+
+    // 13. void stoptime()
+    sym = define_symbol("stoptime", SYMB_FUNCTION, DATA_VOID, 0);
+    sym->attributes.func_info.param_count = 0;
+    sym->attributes.func_info.params = NULL;
 }

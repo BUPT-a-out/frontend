@@ -128,8 +128,14 @@ const char* node_type_to_string(NodeType type) {
             return "VAR";
         case NODE_CONST_VAR:
             return "CONST_VAR";
+        case NODE_ARRAY:
+            return "ARRAY";
+        case NODE_CONST_ARRAY:
+            return "CONST_ARRAY";
         case NODE_ARRAY_ACCESS:
             return "ARRAY_ACCESS";
+        case NODE_CONST_ARRAY_ACCESS:
+            return "CONST_ARRAY_ACCESS";
         case NODE_FUNC_CALL:
             return "FUNC_CALL";
         case NODE_UNARY_OP:
