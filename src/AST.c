@@ -185,7 +185,8 @@ void print_ast(ASTNodePtr node, int level) {
     printf("\n");
 
     // Children
-    for (int i = 0; i < node->child_count; i++) {
-        print_ast(node->children[i], level + 1);
+    if (node->children) {
+        for (int i = 0; i < node->child_count; i++)
+            print_ast(node->children[i], level + 1);
     }
 }

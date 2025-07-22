@@ -191,12 +191,12 @@ FuncFParams:
 
 FuncFParam:
     BType IDENTIFIER {
-        $$ = create_ast_node(NODE_VAR_DEF, $2, yylineno, 0);
-        var_def($$, $1->data.data_type);
+        ASTNodePtr var_node = create_ast_node(NODE_VAR_DEF, $2, yylineno, 0);
+        $$ = create_ast_node(NODE_LIST, "Param", yylineno, 2, $1, var_node);
     }
     | BType IDENTIFIER ConstDimBrackets {
-        $$ = create_ast_node(NODE_ARRAY_DEF, $2, yylineno, 1, $3);
-        var_def($$, $1->data.data_type);
+        ASTNodePtr var_node = create_ast_node(NODE_ARRAY_DEF, $2, yylineno, 1, $3);
+        $$ = create_ast_node(NODE_LIST, "Param", yylineno, 2, $1, var_node);
     }
     ;
 
@@ -366,7 +366,7 @@ UnaryExp:
         }
         NodeData data;
         data.symb_ptr = sym;
-        set_ast_node_data($3, NODE_FUNC_CALL, NULL, data, SYMB_DATA, yylineno);
+        set_ast_node_data($3, NODE_FUNC_CALL, $1, data, SYMB_DATA, yylineno);
         $$ = $3;
     }
     ;
@@ -530,13 +530,21 @@ ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params) {
             func_sym->attributes.func_info.params = (SymbolPtr*)malloc(
                 sizeof(SymbolPtr) * param_count);
             for (int i = 0; i < param_count; ++i) {
-                func_sym->attributes.func_info.params[i] = params->children[i]->data.symb_ptr;
+                ASTNodePtr param_node = params->children[i];
+                ASTNodePtr type_node = param_node->children[0];
+                ASTNodePtr var_node = param_node->children[1];
+                var_def(var_node, type_node->data.data_type);
+                func_sym->attributes.func_info.params[i] = var_node->data.symb_ptr;
+
+                param_node->children[1] = NULL;
+                free_ast(param_node);
+                params->children[i] = var_node;
             }
         }
     }
     NodeData data;
     data.symb_ptr = func_sym;
-    ASTNodePtr output = create_ast_node(NODE_FUNC_DEF, "FuncDef", yylineno, 1, params);
+    ASTNodePtr output = create_ast_node(NODE_FUNC_DEF, name, yylineno, 1, params);
     set_ast_node_data(output, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
     return output;
 }
