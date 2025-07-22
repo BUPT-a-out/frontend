@@ -209,7 +209,7 @@ const char* data_type_to_string(DataType type) {
 void print_symbol_table() {
     printf("\n--- Permanent Symbol Table ---\n");
     printf("%-5s %-20s %-15s %-10s %-10s %-10s\n", "ID", "Name", "Type",
-           "Data Type", "Scope", "Dimensions");
+           "Data Type", "Scope", "Shape");
     printf(
         "----------------------------------------------------------------------"
         "-----\n");

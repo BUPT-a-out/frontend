@@ -82,7 +82,13 @@ target("frontend")
     
     add_deps("flex_gen")
     
-    add_files("src/utils.c", "src/AST.c", "src/symbol_table.c", "src/ir_gen.cpp")
+    add_files(
+        "src/utils.c",
+        "src/AST.c",
+        "src/symbol_table.c",
+        "src/runtime_lib_symbols.c",
+        "src/ir_gen.cpp"
+    )
     
     on_config(function (target)
         local script_dir = os.scriptdir()

@@ -33,6 +33,8 @@ DEC_FLOAT_CONST     {DEC_FRAC_CONST}{DEC_EXP_PART}?|{DEC_DIGIT}+{DEC_EXP_PART}
 HEX_FLOAT_CONST     0[xX]({HEX_FRAC_CONST}|{HEX_DIGIT}+){BIN_EXP_PART}
 FLOAT_CONST         {DEC_FLOAT_CONST}|{HEX_FLOAT_CONST}
 
+STRING_CONST        \"([^\\\"]|\\.)*\"
+
 %x ONE_LINE_COMMENT_MODE MULT_LINE_COMMENT_MODE
 
 %%
@@ -70,6 +72,12 @@ FLOAT_CONST         {DEC_FLOAT_CONST}|{HEX_FLOAT_CONST}
     {FLOAT_CONST}   {
         yylval.str = my_strdup(yytext);
         return FLOAT_CONST;
+    }
+
+    {STRING_CONST}  {
+        yylval.str = my_strdup(yytext + 1);
+        yylval.str[strlen(yylval.str) - 1] = '\0';
+        return STRING_CONST;
     }
 
     "//"            { BEGIN(ONE_LINE_COMMENT_MODE); }

@@ -21,7 +21,6 @@ int main(int argc, char** argv) {
     }
 
     generate_IR(file_in);
-    // test();
 
     if (file_in && file_in != stdin) fclose(file_in);
     return 0;

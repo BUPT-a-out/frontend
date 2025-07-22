@@ -18,7 +18,9 @@
 
     ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params);
     void varlist_def(ASTNodePtr list_root, DataType data_type);
-    ASTNodePtr try_fold_constant(ASTNodePtr node);
+    ASTNodePtr get_const_value(ASTNodePtr node);
+    ASTNodePtr fold_unary_exp(ASTNodePtr node);
+    ASTNodePtr fold_binary_exp(ASTNodePtr node);
 %}
 
 %union {
@@ -26,7 +28,7 @@
     struct ASTNode *node;
 }
 
-%token<str> IDENTIFIER INT_CONST FLOAT_CONST
+%token<str> IDENTIFIER INT_CONST FLOAT_CONST STRING_CONST
 
 %token '-' '+' '*' '/' '%' ';' ',' ':' '?' '!' '<' '>' '(' ')' '[' ']' '{' '}' '.' '='
 %token LEQUAL GEQUAL EQUAL NEQUAL AND OR
@@ -272,7 +274,10 @@ LVal:
         }
         NodeData data;
         data.symb_ptr = sym;
-        $$ = create_ast_node(NODE_VAR, NULL, yylineno, 0);
+        if (sym->symbol_type == SYMB_VAR)
+            $$ = create_ast_node(NODE_VAR, NULL, yylineno, 0);
+        else if (sym->symbol_type == SYMB_CONST_VAR)
+            $$ = create_ast_node(NODE_CONST_VAR, NULL, yylineno, 0);
         set_ast_node_data($$, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
     }
     | IDENTIFIER DimBrackets {
@@ -289,8 +294,8 @@ LVal:
     ;
 
 PrimaryExp:
-    '(' Exp ')' { $$ = $2; }
-    | LVal { $$ = $1; }
+    LVal { $$ = get_const_value($1); }
+    | '(' Exp ')' { $$ = $2; }
     | Number { $$ = $1; }
     ;
 
@@ -315,18 +320,7 @@ UnaryExp:
         NodeData data;
         set_ast_node_data($1, HOLD_NODETYPE, NULL, data, HOLD_NODEDATATYPE, yylineno);
         add_child($1, $2);
-        $$ = try_fold_constant($1);
-    }
-    | IDENTIFIER '(' ')' {
-        SymbolPtr sym = lookup_symbol($1);
-        if (!sym) {
-            yyerror("Undeclared function");
-            YYERROR;
-        }
-        NodeData data;
-        data.symb_ptr = sym;
-        $$ = create_ast_node(NODE_FUNC_CALL, NULL, yylineno, 0);
-        set_ast_node_data($$, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
+        $$ = fold_unary_exp($1);
     }
     | IDENTIFIER '(' FuncRParams ')' {
         SymbolPtr sym = lookup_symbol($1);
@@ -348,45 +342,100 @@ UnaryOp:
     ;
 
 FuncRParams:
-    Exp { $$ = create_ast_node(NODE_LIST, "RParams", yylineno, 1, $1); }
+    /* empty */ { $$ = create_ast_node(NODE_LIST, "RParams", yylineno, 0); }
+    | Exp { $$ = create_ast_node(NODE_LIST, "RParams", yylineno, 1, $1); }
+    | STRING_CONST {
+        NodeData data;
+        data.direct_str = $1;
+        ASTNodePtr str_node = create_ast_node(NODE_CONST, NULL, yylineno, 0);
+        set_ast_node_data(str_node, HOLD_NODETYPE, NULL, data, STRING_DATA, -1);
+        $$ = create_ast_node(NODE_LIST, "RParams", yylineno, 1, str_node);
+    }
     | FuncRParams ',' Exp { add_child($1, $3); $$ = $1; }
+    | FuncRParams ',' STRING_CONST {
+        NodeData data;
+        data.direct_str = $3;
+        ASTNodePtr str_node = create_ast_node(NODE_CONST, NULL, yylineno, 0);
+        set_ast_node_data(str_node, HOLD_NODETYPE, NULL, data, STRING_DATA, -1);
+        add_child($1, str_node);
+        $$ = $1;
+    }
     ;
 
 MulExp:
     UnaryExp { $$ = $1; }
-    | MulExp '*' UnaryExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "*", yylineno, 2, $1, $3)); }
-    | MulExp '/' UnaryExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "/", yylineno, 2, $1, $3)); }
-    | MulExp '%' UnaryExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "%", yylineno, 2, $1, $3)); }
+    | MulExp '*' UnaryExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "*", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
+    | MulExp '/' UnaryExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "/", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
+    | MulExp '%' UnaryExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "%", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
     ;
 
 AddExp:
     MulExp { $$ = $1; }
-    | AddExp '+' MulExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "+", yylineno, 2, $1, $3)); }
-    | AddExp '-' MulExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "-", yylineno, 2, $1, $3)); }
+    | AddExp '+' MulExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "+", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
+    | AddExp '-' MulExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "-", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
     ;
 
 RelExp:
     AddExp { $$ = $1; }
-    | RelExp '<' AddExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "<", yylineno, 2, $1, $3)); }
-    | RelExp '>' AddExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, ">", yylineno, 2, $1, $3)); }
-    | RelExp LEQUAL AddExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "<=", yylineno, 2, $1, $3)); }
-    | RelExp GEQUAL AddExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, ">=", yylineno, 2, $1, $3)); }
+    | RelExp '<' AddExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "<", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
+    | RelExp '>' AddExp {
+        $$ = create_ast_node(NODE_BINARY_OP, ">", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
+    | RelExp LEQUAL AddExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "<=", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
+    | RelExp GEQUAL AddExp {
+        $$ = create_ast_node(NODE_BINARY_OP, ">=", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
     ;
 
 EqExp:
     RelExp { $$ = $1; }
-    | EqExp EQUAL RelExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "==", yylineno, 2, $1, $3)); }
-    | EqExp NEQUAL RelExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "!=", yylineno, 2, $1, $3)); }
+    | EqExp EQUAL RelExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "==", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
+    | EqExp NEQUAL RelExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "!=", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
     ;
 
 LAndExp:
     EqExp { $$ = $1; }
-    | LAndExp AND EqExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "&&", yylineno, 2, $1, $3)); }
+    | LAndExp AND EqExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "&&", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
     ;
 
 LOrExp:
     LAndExp { $$ = $1; }
-    | LOrExp OR LAndExp { $$ = try_fold_constant(create_ast_node(NODE_BINARY_OP, "||", yylineno, 2, $1, $3)); }
+    | LOrExp OR LAndExp {
+        $$ = create_ast_node(NODE_BINARY_OP, "||", yylineno, 2, $1, $3);
+        $$ = fold_binary_exp($$);
+    }
     ;
 
 %%
@@ -434,12 +483,15 @@ void varlist_def(ASTNodePtr list_root, DataType data_type) {
             case NODE_ARRAY_DEF:
             case NODE_CONST_ARRAY_DEF:
                 ASTNodePtr dim = var->children[0];
-                sym->attributes.array_info.dimensions = dim->child_count;
-                sym->attributes.array_info.shape = (int*)malloc(sizeof(int) * dim->child_count);
-                for (int j = 0; j < dim->child_count; ++j) {
+                int dim_count = dim->child_count;
+                sym->attributes.array_info.dimensions = dim_count;
+                sym->attributes.array_info.shape = (int*)malloc(sizeof(int) * dim_count);
+
+                bool valid = true;
+                for (int j = 0; j < dim_count; ++j) {
                     ASTNodePtr dim_node = dim->children[j];
                     int dimension_value = 0;
-                    
+
                     if (dim_node->data_type == INT_DATA) {
                         dimension_value = dim_node->data.direct_int;
                     } else if (dim_node->node_type == NODE_VAR && dim_node->data_type == SYMB_DATA) {
@@ -447,16 +499,20 @@ void varlist_def(ASTNodePtr list_root, DataType data_type) {
                         if (var_sym && var_sym->symbol_type == SYMB_CONST_VAR && var_sym->data_type == DATA_INT) {
                             dimension_value = var_sym->attributes.const_info.int_value;
                         } else {
+                            valid = false;
                             break;
                         }
                     } else {
+                        valid = false;
                         break;
                     }
-                    
+
                     sym->attributes.array_info.shape[j] = dimension_value;
                 }
+
                 free_ast(dim);
                 var->children[0] = NULL;
+                // 可根据 valid 变量决定后续处理
                 break;
             default:
                 break;
@@ -487,78 +543,105 @@ ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params) {
     return output;
 }
 
-ASTNodePtr try_fold_constant(ASTNodePtr node) {
+ASTNodePtr get_const_value(ASTNodePtr node) {
     if (!node) return node;
-    // 只处理一元和二元运算
-    if (node->node_type == NODE_BINARY_OP) {
-        ASTNodePtr lhs = node->children[0];
-        ASTNodePtr rhs = node->children[1];
-        // 只处理左右都是常量的情况
-        if (lhs && rhs && lhs->node_type == NODE_CONST && rhs->node_type == NODE_CONST) {
-            int is_float = (lhs->data_type == FLOAT_DATA || rhs->data_type == FLOAT_DATA);
-            NodeData data;
-            double lval = (lhs->data_type == FLOAT_DATA) ? lhs->data.direct_float : lhs->data.direct_int;
-            double rval = (rhs->data_type == FLOAT_DATA) ? rhs->data.direct_float : rhs->data.direct_int;
-            double result = 0;
-            int valid = 1;
-            if (strcmp(node->name, "+") == 0) result = lval + rval;
-            else if (strcmp(node->name, "-") == 0) result = lval - rval;
-            else if (strcmp(node->name, "*") == 0) result = lval * rval;
-            else if (strcmp(node->name, "/") == 0) {
-                if (rval == 0) valid = 0;
-                else result = lval / rval;
-            }
-            else if (strcmp(node->name, "%") == 0) {
-                if (!is_float && (int)rval != 0) result = (int)lval % (int)rval;
-                else valid = 0;
-            }
-            else if (strcmp(node->name, "<") == 0) result = lval < rval;
-            else if (strcmp(node->name, ">") == 0) result = lval > rval;
-            else if (strcmp(node->name, "<=") == 0) result = lval <= rval;
-            else if (strcmp(node->name, ">=") == 0) result = lval >= rval;
-            else if (strcmp(node->name, "==") == 0) result = lval == rval;
-            else if (strcmp(node->name, "!=") == 0) result = lval != rval;
-            else if (strcmp(node->name, "&&") == 0) result = lval && rval;
-            else if (strcmp(node->name, "||") == 0) result = lval || rval;
-            else valid = 0;
-            if (valid) {
-                ASTNodePtr folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
-                if (is_float) {
-                    data.direct_float = (float)result;
-                    set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, FLOAT_DATA, -1);
-                } else {
-                    data.direct_int = (int)result;
-                    set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, INT_DATA, -1);
-                }
-                // free_ast(node); // 不再在这里释放，由调用者决定
-                return folded;
-            }
+    if (!node->data.symb_ptr) return node;
+    SymbolPtr sym = node->data.symb_ptr;
+
+    if (node->node_type == NODE_CONST_VAR) {
+        ASTNodePtr valued;
+        NodeData data;
+        if (sym->data_type == DATA_INT) {
+            valued = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
+            data.direct_int = sym->attributes.const_info.int_value;
+            set_ast_node_data(valued, HOLD_NODETYPE, NULL, data, INT_DATA, -1);
+        } else if (sym->data_type == DATA_FLOAT) {
+            valued = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
+            data.direct_float = sym->attributes.const_info.float_value;
+            set_ast_node_data(valued, HOLD_NODETYPE, NULL, data, FLOAT_DATA, -1);
         }
-    } else if (node->node_type == NODE_UNARY_OP) {
-        ASTNodePtr child = node->children[0];
-        if (child && child->node_type == NODE_CONST) {
-            NodeData data;
-            int is_float = (child->data_type == FLOAT_DATA);
-            double val = is_float ? child->data.direct_float : child->data.direct_int;
-            double result = 0;
-            int valid = 1;
-            if (strcmp(node->name, "+") == 0) result = val;
-            else if (strcmp(node->name, "-") == 0) result = -val;
-            else if (strcmp(node->name, "!") == 0) result = !val;
-            else valid = 0;
-            if (valid) {
-                ASTNodePtr folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
-                if (is_float) {
-                    data.direct_float = (float)result;
-                    set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, FLOAT_DATA, -1);
-                } else {
-                    data.direct_int = (int)result;
-                    set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, INT_DATA, -1);
-                }
-                // free_ast(node); // 不再在这里释放，由调用者决定
-                return folded;
+        return valued;
+    }
+    return node;
+}
+
+ASTNodePtr fold_unary_exp(ASTNodePtr node) {
+    if (!node) return node;
+    if (node->node_type != NODE_UNARY_OP) return node;
+
+    ASTNodePtr child = node->children[0];
+    if (child && child->node_type == NODE_CONST) {
+        NodeData data;
+        int is_float = (child->data_type == FLOAT_DATA);
+        double val = is_float ? child->data.direct_float : child->data.direct_int;
+        double result = 0;
+        int valid = 1;
+        if (strcmp(node->name, "+") == 0) result = val;
+        else if (strcmp(node->name, "-") == 0) result = -val;
+        else if (strcmp(node->name, "!") == 0) result = !val;
+        else valid = 0;
+        if (valid) {
+            ASTNodePtr folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
+            if (is_float) {
+                data.direct_float = (float)result;
+                set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, FLOAT_DATA, -1);
+            } else {
+                data.direct_int = (int)result;
+                set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, INT_DATA, -1);
             }
+            return folded;
         }
     }
+
+    return node;
+}
+
+ASTNodePtr fold_binary_exp(ASTNodePtr node) {
+    if (!node) return node;
+    if (node->node_type != NODE_BINARY_OP) return node;
+
+    ASTNodePtr lhs = node->children[0];
+    ASTNodePtr rhs = node->children[1];
+    // 只处理左右都是常量的情况
+    if (lhs && rhs && lhs->node_type == NODE_CONST && rhs->node_type == NODE_CONST) {
+        int is_float = (lhs->data_type == FLOAT_DATA || rhs->data_type == FLOAT_DATA);
+        NodeData data;
+        double lval = (lhs->data_type == FLOAT_DATA) ? lhs->data.direct_float : lhs->data.direct_int;
+        double rval = (rhs->data_type == FLOAT_DATA) ? rhs->data.direct_float : rhs->data.direct_int;
+        double result = 0;
+        int valid = 1;
+        if (strcmp(node->name, "+") == 0) result = lval + rval;
+        else if (strcmp(node->name, "-") == 0) result = lval - rval;
+        else if (strcmp(node->name, "*") == 0) result = lval * rval;
+        else if (strcmp(node->name, "/") == 0) {
+            if (rval == 0) valid = 0;
+            else result = lval / rval;
+        }
+        else if (strcmp(node->name, "%") == 0) {
+            if (!is_float && (int)rval != 0) result = (int)lval % (int)rval;
+            else valid = 0;
+        }
+        else if (strcmp(node->name, "<") == 0) result = lval < rval;
+        else if (strcmp(node->name, ">") == 0) result = lval > rval;
+        else if (strcmp(node->name, "<=") == 0) result = lval <= rval;
+        else if (strcmp(node->name, ">=") == 0) result = lval >= rval;
+        else if (strcmp(node->name, "==") == 0) result = lval == rval;
+        else if (strcmp(node->name, "!=") == 0) result = lval != rval;
+        else if (strcmp(node->name, "&&") == 0) result = lval && rval;
+        else if (strcmp(node->name, "||") == 0) result = lval || rval;
+        else valid = 0;
+        if (valid) {
+            ASTNodePtr folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
+            if (is_float) {
+                data.direct_float = (float)result;
+                set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, FLOAT_DATA, -1);
+            } else {
+                data.direct_int = (int)result;
+                set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, INT_DATA, -1);
+            }
+            return folded;
+        }
+    }
+
     return node;
 }

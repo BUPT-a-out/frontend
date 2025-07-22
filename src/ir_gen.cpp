@@ -108,31 +108,44 @@ midend::Value* create_constant(midend::IRBuilder& builder, NodeData data,
 midend::Value* create_binary_op(midend::IRBuilder& builder, midend::Value* left,
                                 midend::Value* right, std::string op_name) {
     if (op_name == "+") {
-        return builder.createAdd(left, right, "add_result");
+        return builder.createAdd(left, right,
+                                 "add_" + std::to_string(temp_idx++));
     } else if (op_name == "-") {
-        return builder.createSub(left, right, "sub_result");
+        return builder.createSub(left, right,
+                                 "sub_" + std::to_string(temp_idx++));
     } else if (op_name == "*") {
-        return builder.createMul(left, right, "mul_result");
+        return builder.createMul(left, right,
+                                 "mul_" + std::to_string(temp_idx++));
     } else if (op_name == "/") {
-        return builder.createDiv(left, right, "div_result");
+        return builder.createDiv(left, right,
+                                 "div_" + std::to_string(temp_idx++));
     } else if (op_name == "%") {
-        return builder.createRem(left, right, "rem_result");
+        return builder.createRem(left, right,
+                                 "rem_" + std::to_string(temp_idx++));
     } else if (op_name == "<") {
-        return builder.createICmpSLT(left, right, "lt_result");
+        return builder.createICmpSLT(left, right,
+                                     "lt_" + std::to_string(temp_idx++));
     } else if (op_name == "<=") {
-        return builder.createICmpSLE(left, right, "le_result");
+        return builder.createICmpSLE(left, right,
+                                     "le_" + std::to_string(temp_idx++));
     } else if (op_name == ">") {
-        return builder.createICmpSGT(left, right, "gt_result");
+        return builder.createICmpSGT(left, right,
+                                     "gt_" + std::to_string(temp_idx++));
     } else if (op_name == ">=") {
-        return builder.createICmpSGE(left, right, "ge_result");
+        return builder.createICmpSGE(left, right,
+                                     "ge_" + std::to_string(temp_idx++));
     } else if (op_name == "==") {
-        return builder.createICmpEQ(left, right, "eq_result");
+        return builder.createICmpEQ(left, right,
+                                    "eq_" + std::to_string(temp_idx++));
     } else if (op_name == "!=") {
-        return builder.createICmpNE(left, right, "ne_result");
+        return builder.createICmpNE(left, right,
+                                    "ne_" + std::to_string(temp_idx++));
     } else if (op_name == "&&") {
-        return builder.createLAnd(left, right, "and_result");
+        return builder.createLAnd(left, right,
+                                  "and_" + std::to_string(temp_idx++));
     } else if (op_name == "||") {
-        return builder.createLOr(left, right, "or_result");
+        return builder.createLOr(left, right,
+                                 "or_" + std::to_string(temp_idx++));
     } else
         return nullptr;
 }
@@ -314,9 +327,10 @@ midend::Value* translate_node(
 
             if (op_name == "-") {
                 return builder.createSub(builder.getInt32(0), operand,
-                                         "neg_result");
+                                         "neg_" + std::to_string(temp_idx++));
             } else if (op_name == "!") {
-                return builder.createNot(operand, "not_result");
+                return builder.createNot(operand,
+                                         "not_" + std::to_string(temp_idx++));
             }
 
             return nullptr;
@@ -637,6 +651,7 @@ std::unique_ptr<midend::Module> generate_IR(FILE* file_in) {
     yyin = file_in;
 
     init_symbol_management();
+    add_runtime_lib_symbols();
 
 #ifdef DEBUG
     if (!yyparse()) {
