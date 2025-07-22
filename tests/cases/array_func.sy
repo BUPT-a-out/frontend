@@ -1,0 +1,16 @@
+const int g = 14;
+const int N = 10000;
+
+int data[N] = {0, 1, 2, 3, 4};
+int data2[N][5] = {{1}, {2, 3}};
+
+int sum(int a[], int arr[], int arr2[][5]) {
+    return a[0] + arr[0] + arr[1] + arr2[0][0] + arr2[0][1];
+}
+
+int main() {
+    int a = 5;
+    int b[10] = {4, 3, 2, 1};
+    int c[5][5] = {{1, 2}, {3, 4}};
+    return a + data[1] + b[3] + g + sum(b, c[0], data2);
+}

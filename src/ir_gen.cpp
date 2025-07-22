@@ -489,7 +489,8 @@ midend::Value* translate_node(
             return create_constant(builder, node->data, node->data_type);
         }
 
-        case NODE_VAR: {
+        case NODE_VAR:
+        case NODE_ARRAY: {
             // 变量节点
             SymbolPtr symbol = node->data.symb_ptr;
             if (node->data_type != SYMB_DATA && !symbol) return nullptr;
