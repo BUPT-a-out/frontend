@@ -1,5 +1,6 @@
 #include "ir_gen.h"
 
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -70,26 +71,102 @@ midend::Type* get_array_type(midend::Context* ctx, DataType base_type,
 }
 
 // 辅助函数：处理数组初始化列表
-std::vector<midend::Constant*> process_array_init_list(ASTNodePtr init_list,
-                                                       midend::Context* ctx,
-                                                       DataType base_type) {
-    std::vector<midend::Constant*> result;
-    if (!init_list) return result;
+midend::Constant* process_array_init_list(ASTNodePtr init_list,
+                                          midend::Context* ctx,
+                                          midend::Type* target_type,
+                                          DataType base_type) {
+    if (!init_list || !target_type || !target_type->isArrayType())
+        return nullptr;
+
+    midend::ArrayType* array_type =
+        static_cast<midend::ArrayType*>(target_type);
+    midend::Type* elem_type = array_type->getElementType();
+    std::vector<midend::Constant*> elements;
 
     for (int i = 0; i < init_list->child_count; ++i) {
         ASTNodePtr child = init_list->children[i];
-        if (child->node_type == NODE_CONST) {
-            if (child->data_type == INT_DATA && base_type == DATA_INT) {
-                result.push_back(midend::ConstantInt::get(
-                    ctx->getInt32Type(), child->data.direct_int));
-            } else if (child->data_type == FLOAT_DATA &&
+        midend::Constant* elem = nullptr;
+
+        if (child->node_type == NODE_LIST) {
+            elem = process_array_init_list(child, ctx, elem_type, base_type);
+        } else if (child->node_type == NODE_CONST) {
+            if (elem_type->isIntegerType() && child->data_type == INT_DATA &&
+                base_type == DATA_INT) {
+                elem = midend::ConstantInt::get(
+                    static_cast<midend::IntegerType*>(elem_type),
+                    child->data.direct_int);
+            } else if (elem_type->isFloatType() &&
+                       child->data_type == FLOAT_DATA &&
                        base_type == DATA_FLOAT) {
-                result.push_back(midend::ConstantFP::get(
-                    ctx->getFloatType(), child->data.direct_float));
+                elem = midend::ConstantFP::get(
+                    static_cast<midend::FloatType*>(elem_type),
+                    child->data.direct_float);
             }
         }
+
+        if (elem) {
+            elements.push_back(elem);
+        }
     }
-    return result;
+
+    return elements.empty() ? nullptr
+                            : midend::ConstantArray::get(array_type, elements);
+}
+
+midend::Value* get_array_element_ptr(
+    SymbolPtr symbol, const std::vector<midend::Value*>& indices,
+    midend::IRBuilder& builder,
+    const std::unordered_map<int, midend::Value*>& local_vars);
+
+// 辅助函数：初始化数组元素
+void initialize_array_elements(
+    ASTNodePtr init_list, SymbolPtr symbol, midend::Type* array_type,
+    midend::IRBuilder& builder,
+    std::unordered_map<int, midend::Value*>& local_vars) {
+    std::function<void(ASTNodePtr, std::vector<int>&, midend::Type*)>
+        init_array = [&](ASTNodePtr list, std::vector<int>& indices,
+                         midend::Type* curr_type) {
+            if (!list || !curr_type || !curr_type->isArrayType()) return;
+
+            midend::ArrayType* arr_type =
+                static_cast<midend::ArrayType*>(curr_type);
+            midend::Type* elem_type = arr_type->getElementType();
+
+            for (int i = 0; i < list->child_count; ++i) {
+                ASTNodePtr child = list->children[i];
+                indices.push_back(i);
+
+                if (child->node_type == NODE_LIST) {
+                    init_array(child, indices, elem_type);
+                } else if (child->node_type == NODE_CONST &&
+                           elem_type->isIntegerType()) {
+                    std::vector<midend::Value*> gep_indices;
+                    for (int idx : indices) {
+                        gep_indices.push_back(builder.getInt32(idx));
+                    }
+
+                    midend::Value* elem_ptr = get_array_element_ptr(
+                        symbol, gep_indices, builder, local_vars);
+
+                    if (child->data_type == INT_DATA &&
+                        symbol->data_type == DATA_INT) {
+                        midend::Value* init_val =
+                            builder.getInt32(child->data.direct_int);
+                        builder.createStore(init_val, elem_ptr);
+                    } else if (child->data_type == FLOAT_DATA &&
+                               symbol->data_type == DATA_FLOAT) {
+                        midend::Value* init_val =
+                            builder.getFloat(child->data.direct_float);
+                        builder.createStore(init_val, elem_ptr);
+                    }
+                }
+
+                indices.pop_back();
+            }
+        };
+
+    std::vector<int> indices;
+    init_array(init_list, indices, array_type);
 }
 
 // 辅助函数：创建常量值
@@ -285,11 +362,12 @@ midend::Value* translate_node(
 
             std::vector<midend::Value*> params;
             for (int i = 0; i < node->child_count; ++i) {
-                midend::Value* param_sym = translate_node(
+                midend::Value* param_val = translate_node(
                     node->children[i], builder, current_func, local_vars);
-                if (!param_sym) return nullptr;
-                params.push_back(param_sym);
+                if (!param_val) return nullptr;
+                params.push_back(param_val);
             }
+
             auto it = func_tab.find(func_sym->id);
             if (it != func_tab.end()) {
                 midend::Function* func = it->second;
@@ -449,13 +527,8 @@ midend::Value* translate_node(
 
             if (node->child_count > 1) {
                 ASTNodePtr init_list = node->children[1];
-                auto init_values = process_array_init_list(
-                    init_list, builder.getContext(), symbol->data_type);
-                for (size_t i = 0; i < init_values.size(); ++i) {
-                    midend::Value* elem_ptr = builder.createGEP(
-                        array_type, array_alloca, {builder.getInt32(i)});
-                    builder.createStore(init_values[i], elem_ptr);
-                }
+                initialize_array_elements(init_list, symbol, array_type,
+                                          builder, local_vars);
             }
 
             return array_alloca;
@@ -605,13 +678,8 @@ std::unique_ptr<midend::Module> translate_root(ASTNodePtr node) {
                 midend::Constant* init = nullptr;
 
                 if (child->child_count > 1) {
-                    ASTNodePtr init_list = child->children[1];
-                    auto init_values =
-                        process_array_init_list(init_list, ctx, sym->data_type);
-                    if (!init_values.empty()) {
-                        init = midend::ConstantArray::get(
-                            (midend::ArrayType*)array_type, init_values);
-                    }
+                    init = process_array_init_list(child->children[1], ctx,
+                                                   array_type, sym->data_type);
                 }
 
                 auto linkage = is_const
