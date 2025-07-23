@@ -239,7 +239,7 @@ Stmt:
             set_ast_node_data($7, HOLD_NODETYPE, "If-3", foo, HOLD_NODEDATATYPE, -1);
             if_3 = $7;
         } else if_3 = create_ast_node(NODE_LIST, "If-3", yylineno, 1, $7);
-        $$ = create_ast_node(NODE_IF_STMT, NULL, yylineno, 3, $3, if_2, if_3);
+        $$ = create_ast_node(NODE_IF_ELSE_STMT, NULL, yylineno, 3, $3, if_2, if_3);
     }
     | WHILE '(' Cond ')' Stmt {
         ASTNodePtr while_2;

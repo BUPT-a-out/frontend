@@ -114,6 +114,8 @@ const char* node_type_to_string(NodeType type) {
             return "ASSIGN_STMT";
         case NODE_IF_STMT:
             return "IF_STMT";
+        case NODE_IF_ELSE_STMT:
+            return "IF_ELSE_STMT";
         case NODE_WHILE_STMT:
             return "WHILE_STMT";
         case NODE_RETURN_STMT:

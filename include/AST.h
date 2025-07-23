@@ -33,6 +33,7 @@ typedef enum {
     // Statements
     NODE_ASSIGN_STMT,
     NODE_IF_STMT,
+    NODE_IF_ELSE_STMT,
     NODE_WHILE_STMT,
     NODE_RETURN_STMT,
     NODE_BREAK_STMT,

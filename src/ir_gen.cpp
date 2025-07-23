@@ -831,6 +831,88 @@ midend::Value* translate_node(
             return nullptr;
         }
 
+        case NODE_IF_ELSE_STMT: {
+            // if-else语句处理
+            if (node->child_count < 2) return nullptr;
+
+            // 计算条件表达式
+            midend::Value* cond = translate_node(node->children[0], builder,
+                                                 current_func, local_vars);
+            if (!cond) return nullptr;
+
+            // 创建then和else基本块，使用唯一的标签
+            midend::BasicBlock* thenBB = builder.createBasicBlock(
+                "if.then." + std::to_string(temp_idx++), current_func);
+            midend::BasicBlock* elseBB = builder.createBasicBlock(
+                "if.else." + std::to_string(temp_idx++), current_func);
+            midend::BasicBlock* mergeBB = builder.createBasicBlock(
+                "if.merge." + std::to_string(temp_idx++), current_func);
+
+            // 根据条件跳转
+            builder.createCondBr(cond, thenBB, elseBB);
+
+            // 生成then分支的代码
+            builder.setInsertPoint(thenBB);
+            translate_node(node->children[1], builder, current_func,
+                           local_vars);
+            builder.createBr(mergeBB);
+
+            // 生成else分支的代码
+            builder.setInsertPoint(elseBB);
+            translate_node(node->children[2], builder, current_func,
+                           local_vars);
+
+            // 如果else块没有终结指令，添加到merge块的跳转
+            if (!builder.getInsertBlock()->getTerminator()) {
+                builder.createBr(mergeBB);
+            }
+
+            // 继续在merge块生成代码
+            builder.setInsertPoint(mergeBB);
+
+            return nullptr;
+        }
+
+        case NODE_WHILE_STMT: {
+            // while语句处理
+            if (node->child_count < 2) return nullptr;
+
+            // 条件判断块
+            midend::BasicBlock* condBB = builder.createBasicBlock(
+                "while.cond." + std::to_string(temp_idx++), current_func);
+
+            // 跳转进入当前基本块
+            builder.createBr(condBB);
+
+            // 计算条件表达式
+            builder.setInsertPoint(condBB);
+            midend::Value* cond = translate_node(node->children[0], builder,
+                                                 current_func, local_vars);
+            if (!cond) return nullptr;
+            midend::BasicBlock* block_after_cond = builder.getInsertBlock();
+
+            // loop基本块
+            midend::BasicBlock* loopBB = builder.createBasicBlock(
+                "while.loop." + std::to_string(temp_idx++), current_func);
+            builder.setInsertPoint(loopBB);
+            translate_node(node->children[1], builder, current_func,
+                           local_vars);
+            builder.createBr(condBB);
+
+            // merge基本块
+            midend::BasicBlock* mergeBB = builder.createBasicBlock(
+                "while.merge." + std::to_string(temp_idx++), current_func);
+
+            // 跳转指令
+            builder.setInsertPoint(block_after_cond);
+            builder.createCondBr(cond, loopBB, mergeBB);
+
+            // 继续在merge块生成代码
+            builder.setInsertPoint(mergeBB);
+
+            return nullptr;
+        }
+
         default:
             // 处理其他节点类型
             midend::Value* last_value = nullptr;
