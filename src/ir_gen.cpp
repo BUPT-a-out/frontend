@@ -402,12 +402,6 @@ midend::Value* create_binary_op(midend::IRBuilder& builder, midend::Value* left,
     } else if (op_name == "!=") {
         return builder.createICmpNE(left, right,
                                     "ne_" + std::to_string(temp_idx++));
-    } else if (op_name == "&&") {
-        return builder.createLAnd(left, right,
-                                  "and_" + std::to_string(temp_idx++));
-    } else if (op_name == "||") {
-        return builder.createLOr(left, right,
-                                 "or_" + std::to_string(temp_idx++));
     } else
         return nullptr;
 }
@@ -568,15 +562,66 @@ midend::Value* translate_node(
             // 二元操作节点
             if (node->child_count < 2) return nullptr;
 
-            midend::Value* left = translate_node(node->children[0], builder,
-                                                 current_func, local_vars);
-            midend::Value* right = translate_node(node->children[1], builder,
-                                                  current_func, local_vars);
-
-            if (!left || !right) return nullptr;
             std::string op_name = node->name ? node->name : "";
+            
+            // 处理短路求值的逻辑运算符
+            if (op_name == "&&" || op_name == "||") {
+                // 先计算左操作数
+                midend::Value* left = translate_node(node->children[0], builder,
+                                                     current_func, local_vars);
+                if (!left) return nullptr;
 
-            return create_binary_op(builder, left, right, op_name);
+                // 创建用于短路求值的基本块
+                midend::BasicBlock* rhsBB = builder.createBasicBlock(
+                    op_name == "&&" ? "and.rhs" : "or.rhs", current_func);
+                midend::BasicBlock* mergeBB = builder.createBasicBlock(
+                    op_name == "&&" ? "and.merge" : "or.merge", current_func);
+                
+                // 保存当前基本块
+                midend::BasicBlock* currentBB = builder.getInsertBlock();
+                
+                if (op_name == "&&") {
+                    // 对于 &&：如果左边为假，跳到 merge；否则计算右边
+                    builder.createCondBr(left, rhsBB, mergeBB);
+                } else {  // op_name == "||"
+                    // 对于 ||：如果左边为真，跳到 merge；否则计算右边
+                    builder.createCondBr(left, mergeBB, rhsBB);
+                }
+                
+                // 在右操作数基本块中计算右操作数
+                builder.setInsertPoint(rhsBB);
+                midend::Value* right = translate_node(node->children[1], builder,
+                                                      current_func, local_vars);
+                if (!right) return nullptr;
+                builder.createBr(mergeBB);
+                rhsBB = builder.getInsertBlock();  // 可能已经改变
+                
+                // 在合并基本块中创建 PHI 节点
+                builder.setInsertPoint(mergeBB);
+                midend::PHINode* phi = builder.createPHI(builder.getInt1Type(),
+                                      op_name == "&&" ? "and.result" : "or.result");
+                
+                if (op_name == "&&") {
+                    // 对于 &&：左边为假时结果为假，否则结果为右边的值
+                    phi->addIncoming(builder.getFalse(), currentBB);
+                    phi->addIncoming(right, rhsBB);
+                } else {  // op_name == "||"
+                    // 对于 ||：左边为真时结果为真，否则结果为右边的值
+                    phi->addIncoming(builder.getTrue(), currentBB);
+                    phi->addIncoming(right, rhsBB);
+                }
+                
+                return phi;
+            } else {
+                // 对于其他二元运算符，正常计算两个操作数
+                midend::Value* left = translate_node(node->children[0], builder,
+                                                     current_func, local_vars);
+                midend::Value* right = translate_node(node->children[1], builder,
+                                                      current_func, local_vars);
+
+                if (!left || !right) return nullptr;
+                return create_binary_op(builder, left, right, op_name);
+            }
         }
 
         case NODE_UNARY_OP: {
@@ -720,6 +765,39 @@ midend::Value* translate_node(
             return array_alloca;
         }
 
+        case NODE_IF_STMT: {
+            // if语句处理
+            if (node->child_count < 2) return nullptr;
+            
+            // 计算条件表达式
+            midend::Value* cond = translate_node(node->children[0], builder,
+                                                 current_func, local_vars);
+            if (!cond) return nullptr;
+            
+            // 创建then和merge基本块，使用唯一的标签
+            midend::BasicBlock* thenBB = builder.createBasicBlock(
+                "if.then." + std::to_string(temp_idx++), current_func);
+            midend::BasicBlock* mergeBB = builder.createBasicBlock(
+                "if.merge." + std::to_string(temp_idx++), current_func);
+            
+            // 根据条件跳转
+            builder.createCondBr(cond, thenBB, mergeBB);
+            
+            // 生成then分支的代码
+            builder.setInsertPoint(thenBB);
+            translate_node(node->children[1], builder, current_func, local_vars);
+            
+            // 如果then块没有终结指令，添加到merge块的跳转
+            if (!builder.getInsertBlock()->getTerminator()) {
+                builder.createBr(mergeBB);
+            }
+            
+            // 继续在merge块生成代码
+            builder.setInsertPoint(mergeBB);
+            
+            return nullptr;
+        }
+
         default:
             // 处理其他节点类型
             midend::Value* last_value = nullptr;
@@ -752,17 +830,19 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
     std::vector<std::string> param_names;
     for (int i = 0; i < param_node->child_count; i++) {
         param_sym = param_node->children[i]->data.symb_ptr;
-        ASTNodePtr param_ast = param_node->children[i];
         midend::Type* param_type = nullptr;
 
         if (param_sym->symbol_type == SYMB_ARRAY) {
             midend::Type* elem_type = get_ir_type(ctx, param_sym->data_type);
-            for (int j = 1; j < param_ast->child_count; j++) {
-                ASTNodePtr dim_node = param_ast->children[j];
-                if (dim_node->node_type == NODE_CONST &&
-                    dim_node->data_type == INT_DATA) {
-                    elem_type = midend::ArrayType::get(
-                        elem_type, dim_node->data.direct_int);
+            // 对于函数参数，我们需要从符号表中获取维度信息
+            // 并从第二维开始构建数组类型（第一维作为指针）
+            if (param_sym->attributes.array_info.dimensions > 1) {
+                // 从最内层维度开始构建（逆序）
+                for (int j = param_sym->attributes.array_info.dimensions - 1; j >= 1; j--) {
+                    int dim_size = param_sym->attributes.array_info.shape[j];
+                    if (dim_size > 0) {  // 0表示未知大小
+                        elem_type = midend::ArrayType::get(elem_type, dim_size);
+                    }
                 }
             }
             param_type = midend::PointerType::get(elem_type);

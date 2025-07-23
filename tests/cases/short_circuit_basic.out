@@ -1,0 +1,109 @@
+Parsing completed successfully.
+
+--- Abstract Syntax Tree ---
++-- ROOT
+|   +-- FUNC_DEF: main (sym: main, id: 24)
+|   |   +-- LIST: FParams
+|   |   +-- LIST: Block
+|   |   |   +-- VAR_DEF: a (sym: a, id: 25)
+|   |   |   |   +-- CONST (int value: 0)
+|   |   |   +-- VAR_DEF: b (sym: b, id: 26)
+|   |   |   |   +-- CONST (int value: 1)
+|   |   |   +-- VAR_DEF: result (sym: result, id: 27)
+|   |   |   |   +-- CONST (int value: 0)
+|   |   |   +-- IF_STMT
+|   |   |   |   +-- BINARY_OP: &&
+|   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   +-- LIST: If-2
+|   |   |   |   |   +-- ASSIGN_STMT
+|   |   |   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   +-- IF_STMT
+|   |   |   |   +-- BINARY_OP: ||
+|   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   +-- LIST: If-2
+|   |   |   |   |   +-- ASSIGN_STMT
+|   |   |   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   |   |   +-- BINARY_OP: +
+|   |   |   |   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   |   |   |   +-- CONST (int value: 10)
+|   |   |   +-- RETURN_STMT
+|   |   |   |   +-- VAR (sym: result, id: 27)
+
+--- Permanent Symbol Table ---
+ID    Name                 Type            Data Type  Scope      Shape     
+---------------------------------------------------------------------------
+0     getint               function        int        1          N/A       
+1     getch                function        int        1          N/A       
+2     getfloat             function        float      1          N/A       
+3     getarray             function        int        1          N/A       
+4     array                array           int        2          0
+5     getfarray            function        int        1          N/A       
+6     array                array           float      2          0
+7     putint               function        void       1          N/A       
+8     value                var             int        2          N/A       
+9     putch                function        void       1          N/A       
+10    value                var             int        2          N/A       
+11    putfloat             function        void       1          N/A       
+12    value                var             float      2          N/A       
+13    putarray             function        void       1          N/A       
+14    len                  var             int        2          N/A       
+15    array                array           int        2          0
+16    putfarray            function        void       1          N/A       
+17    len                  var             int        2          N/A       
+18    array                array           float      2          0
+19    putf                 function        void       1          N/A       
+20    format_string        var             char       2          N/A       
+21    value                var             int        2          N/A       
+22    starttime            function        void       1          N/A       
+23    stoptime             function        void       1          N/A       
+24    main                 function        int        1          N/A       
+25    a                    var             int        3          N/A       
+26    b                    var             int        3          N/A       
+27    result               var             int        3          N/A       
+---------------------------------------------------------------------------
+
+--- Generated IR ---
+; ModuleID = 'main'
+
+define i32 @main() {
+entry:
+  %a_25 = alloca i32
+  store i32 0, i32* %a_25
+  %b_26 = alloca i32
+  store i32 1, i32* %b_26
+  %result_27 = alloca i32
+  store i32 0, i32* %result_27
+  %0 = load i32, i32* %a_25
+  br i1 %0, label %and.rhs, label %and.merge
+and.rhs:
+  %1 = load i32, i32* %b_26
+  br label %and.merge
+and.merge:
+  %and.result = phi i1 [ 0, %entry ], [ %1, %and.rhs ]
+  br i1 %and.result, label %if.then.2, label %if.merge.3
+if.then.2:
+  store i32 1, i32* %result_27
+  br label %if.merge.3
+if.merge.3:
+  %4 = load i32, i32* %b_26
+  br i1 %4, label %or.merge, label %or.rhs
+or.rhs:
+  %5 = load i32, i32* %a_25
+  br label %or.merge
+or.merge:
+  %or.result = phi i1 [ 1, %if.merge.3 ], [ %5, %or.rhs ]
+  br i1 %or.result, label %if.then.6, label %if.merge.7
+if.then.6:
+  %8 = load i32, i32* %result_27
+  %add_9 = add i32 %8, 10
+  store i32 %add_9, i32* %result_27
+  br label %if.merge.7
+if.merge.7:
+  %10 = load i32, i32* %result_27
+  ret i32 %10
+}
+
+

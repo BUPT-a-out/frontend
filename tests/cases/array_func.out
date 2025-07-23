@@ -138,10 +138,10 @@ entry:
   %4 = getelementptr i32*, i32* %arr_30, i32 1
   %5 = load i32, i32* %4
   %add_1 = add i32 %add_0, %5
-  %6 = getelementptr i32*, [5 x i32]* %arr2_31, i32 0, i32 0
+  %6 = getelementptr [5 x i32]*, [5 x i32]* %arr2_31, i32 0, i32 0
   %7 = load i32, i32* %6
   %add_2 = add i32 %add_1, %7
-  %8 = getelementptr i32*, i32* %arr2_31, i32 0, i32 1
+  %8 = getelementptr [5 x i32]*, [5 x i32]* %arr2_31, i32 0, i32 1
   %9 = load i32, i32* %8
   %add_3 = add i32 %add_2, %9
   ret i32 %add_3
