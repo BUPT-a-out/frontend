@@ -805,25 +805,27 @@ midend::Value* translate_node(
             midend::Value* cond = translate_node(node->children[0], builder,
                                                  current_func, local_vars);
             if (!cond) return nullptr;
+            midend::BasicBlock* block_after_cond = builder.getInsertBlock();
 
-            // 创建then和merge基本块，使用唯一的标签
+            // then基本块
             midend::BasicBlock* thenBB = builder.createBasicBlock(
                 "if.then." + std::to_string(temp_idx++), current_func);
-            midend::BasicBlock* mergeBB = builder.createBasicBlock(
-                "if.merge." + std::to_string(temp_idx++), current_func);
-
-            // 根据条件跳转
-            builder.createCondBr(cond, thenBB, mergeBB);
-
-            // 生成then分支的代码
             builder.setInsertPoint(thenBB);
             translate_node(node->children[1], builder, current_func,
                            local_vars);
+            midend::BasicBlock* block_after_then = builder.getInsertBlock();
+
+            // merge基本块
+            midend::BasicBlock* mergeBB = builder.createBasicBlock(
+                "if.merge." + std::to_string(temp_idx++), current_func);
 
             // 如果then块没有终结指令，添加到merge块的跳转
-            if (!builder.getInsertBlock()->getTerminator()) {
+            if (!block_after_then->getTerminator())
                 builder.createBr(mergeBB);
-            }
+
+            // 根据条件跳转
+            builder.setInsertPoint(block_after_cond);
+            builder.createCondBr(cond, thenBB, mergeBB);
 
             // 继续在merge块生成代码
             builder.setInsertPoint(mergeBB);
@@ -839,33 +841,41 @@ midend::Value* translate_node(
             midend::Value* cond = translate_node(node->children[0], builder,
                                                  current_func, local_vars);
             if (!cond) return nullptr;
+            midend::BasicBlock* block_after_cond = builder.getInsertBlock();
 
-            // 创建then和else基本块，使用唯一的标签
+            // then基本块
             midend::BasicBlock* thenBB = builder.createBasicBlock(
                 "if.then." + std::to_string(temp_idx++), current_func);
-            midend::BasicBlock* elseBB = builder.createBasicBlock(
-                "if.else." + std::to_string(temp_idx++), current_func);
-            midend::BasicBlock* mergeBB = builder.createBasicBlock(
-                "if.merge." + std::to_string(temp_idx++), current_func);
-
-            // 根据条件跳转
-            builder.createCondBr(cond, thenBB, elseBB);
-
-            // 生成then分支的代码
             builder.setInsertPoint(thenBB);
             translate_node(node->children[1], builder, current_func,
                            local_vars);
-            builder.createBr(mergeBB);
+            midend::BasicBlock* block_after_then = builder.getInsertBlock();
 
-            // 生成else分支的代码
+            // else基本块
+            midend::BasicBlock* elseBB = builder.createBasicBlock(
+                "if.else." + std::to_string(temp_idx++), current_func);
             builder.setInsertPoint(elseBB);
             translate_node(node->children[2], builder, current_func,
                            local_vars);
+            midend::BasicBlock* block_after_else = builder.getInsertBlock();
 
-            // 如果else块没有终结指令，添加到merge块的跳转
-            if (!builder.getInsertBlock()->getTerminator()) {
+            // merge基本块
+            midend::BasicBlock* mergeBB = builder.createBasicBlock(
+                "if.merge." + std::to_string(temp_idx++), current_func);
+
+            // 如果then、else块没有终结指令，添加到merge块的跳转
+            if (!block_after_then->getTerminator()) {
+                builder.setInsertPoint(block_after_then);
                 builder.createBr(mergeBB);
             }
+            if (!block_after_else->getTerminator()) {
+                builder.setInsertPoint(block_after_else);
+                builder.createBr(mergeBB);
+            }
+
+            // 根据条件跳转
+            builder.setInsertPoint(block_after_cond);
+            builder.createCondBr(cond, thenBB, elseBB);
 
             // 继续在merge块生成代码
             builder.setInsertPoint(mergeBB);

@@ -1,16 +1,13 @@
 int main() {
-    int a = 1, b = 2;
-
-    if (a < b || a > 0 && b > 0)
-        a = a + 1;
-
-    if (a < b || a > 0 && b > 0)
-        a = a + 1;
-    else
-        a = a - 1;
-
-    while (a < b || a > 0 && b > 0) {
-        if (a > 0) a = a + 1;
+    if (1) {
+        if (1) ;
+        else ;
+    }
+    else {
+        while (0) {
+            if (1) ;
+            else ;
+        }
     }
 
     return 0;

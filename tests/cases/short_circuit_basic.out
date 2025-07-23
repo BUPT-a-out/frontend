@@ -105,20 +105,20 @@ or.rhs.11:
   br label %or.merge.12
 or.merge.12:
   %or.result.15 = phi i1 [ 1, %if.merge.8 ], [ %tobool.14, %or.rhs.11 ]
-  br i1 %or.result.15, label %if.then.16, label %if.merge.17
+  br i1 %or.result.15, label %if.then.16, label %if.merge.19
 if.then.16:
-  %18 = load i32, i32* %result_27
-  %add_19 = add i32 %18, 10
-  store i32 %add_19, i32* %result_27
-  br label %if.merge.17
-if.merge.17:
+  %17 = load i32, i32* %result_27
+  %add_18 = add i32 %17, 10
+  store i32 %add_18, i32* %result_27
+  br label %if.merge.19
+if.merge.19:
   %20 = load i32, i32* %result_27
   %not.21 = icmp eq i32 %20, 0
-  br i1 %not.21, label %if.then.22, label %if.merge.23
+  br i1 %not.21, label %if.then.22, label %if.merge.24
 if.then.22:
-  %24 = load i32, i32* %b_26
-  ret i32 %24
-if.merge.23:
+  %23 = load i32, i32* %b_26
+  ret i32 %23
+if.merge.24:
   %25 = load i32, i32* %result_27
   ret i32 %25
 }
