@@ -1,0 +1,14 @@
+int sum(int a, int b) { return a + b; }
+
+int main() {
+    int a = 0;
+    int b = 1;
+    int x = 5;
+    int result = 0;
+
+    if (x && b || sum(a, b)) {
+        result = 1;
+    }
+
+    return result;
+}
