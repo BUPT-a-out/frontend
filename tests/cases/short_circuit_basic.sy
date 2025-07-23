@@ -2,14 +2,18 @@ int main() {
     int a = 0;
     int b = 1;
     int result = 0;
-    
+
     if (a && b) {
         result = 1;
     }
-    
+
     if (b || a) {
         result = result + 10;
     }
-    
+
+    if (!result) {
+        return b;
+    }
+
     return result;
 }

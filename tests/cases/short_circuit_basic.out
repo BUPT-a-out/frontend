@@ -29,6 +29,12 @@ Parsing completed successfully.
 |   |   |   |   |   |   +-- BINARY_OP: +
 |   |   |   |   |   |   |   +-- VAR (sym: result, id: 27)
 |   |   |   |   |   |   |   +-- CONST (int value: 10)
+|   |   |   +-- IF_STMT
+|   |   |   |   +-- UNARY_OP: !
+|   |   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   +-- LIST: If-2
+|   |   |   |   |   +-- RETURN_STMT
+|   |   |   |   |   |   +-- VAR (sym: b, id: 26)
 |   |   |   +-- RETURN_STMT
 |   |   |   |   +-- VAR (sym: result, id: 27)
 
@@ -107,7 +113,14 @@ if.then.16:
   br label %if.merge.17
 if.merge.17:
   %20 = load i32, i32* %result_27
-  ret i32 %20
+  %not.21 = icmp eq i32 %20, 0
+  br i1 %not.21, label %if.then.22, label %if.merge.23
+if.then.22:
+  %24 = load i32, i32* %b_26
+  ret i32 %24
+if.merge.23:
+  %25 = load i32, i32* %result_27
+  ret i32 %25
 }
 
 

@@ -663,12 +663,14 @@ midend::Value* translate_node(
             } else if (op_name == "!") {
                 // 如果操作数是 i32，直接用 icmp eq 0 实现逻辑非
                 if (operand->getType()->getBitWidth() != 1) {
-                    return builder.createICmpEQ(operand, builder.getInt32(0),
-                                               "not." + std::to_string(temp_idx++));
+                    return builder.createICmpEQ(
+                        operand, builder.getInt32(0),
+                        "not." + std::to_string(temp_idx++));
                 } else {
                     // 如果已经是 i1 类型，使用 icmp eq 与 false 比较
-                    return builder.createICmpEQ(operand, builder.getFalse(),
-                                               "not." + std::to_string(temp_idx++));
+                    return builder.createICmpEQ(
+                        operand, builder.getFalse(),
+                        "not." + std::to_string(temp_idx++));
                 }
             }
 
