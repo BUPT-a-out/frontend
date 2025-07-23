@@ -1,0 +1,198 @@
+Parsing completed successfully.
+
+--- Abstract Syntax Tree ---
++-- ROOT
+|   +-- FUNC_DEF: main (sym: main, id: 24)
+|   |   +-- LIST: FParams
+|   |   +-- LIST: Block
+|   |   |   +-- VAR_DEF: a (sym: a, id: 25)
+|   |   |   |   +-- CONST (int value: 1)
+|   |   |   +-- VAR_DEF: b (sym: b, id: 26)
+|   |   |   |   +-- CONST (int value: 2)
+|   |   |   +-- IF_STMT
+|   |   |   |   +-- BINARY_OP: ||
+|   |   |   |   |   +-- BINARY_OP: <
+|   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   |   +-- BINARY_OP: &&
+|   |   |   |   |   |   +-- BINARY_OP: >
+|   |   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   |   |   +-- BINARY_OP: >
+|   |   |   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   +-- LIST: If-2
+|   |   |   |   |   +-- ASSIGN_STMT
+|   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   +-- BINARY_OP: +
+|   |   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   +-- IF_ELSE_STMT
+|   |   |   |   +-- BINARY_OP: ||
+|   |   |   |   |   +-- BINARY_OP: <
+|   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   |   +-- BINARY_OP: &&
+|   |   |   |   |   |   +-- BINARY_OP: >
+|   |   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   |   |   +-- BINARY_OP: >
+|   |   |   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   +-- LIST: If-2
+|   |   |   |   |   +-- ASSIGN_STMT
+|   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   +-- BINARY_OP: +
+|   |   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   |   +-- LIST: If-3
+|   |   |   |   |   +-- ASSIGN_STMT
+|   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   +-- BINARY_OP: -
+|   |   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   +-- WHILE_STMT
+|   |   |   |   +-- BINARY_OP: ||
+|   |   |   |   |   +-- BINARY_OP: <
+|   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   |   +-- BINARY_OP: &&
+|   |   |   |   |   |   +-- BINARY_OP: >
+|   |   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   |   |   +-- BINARY_OP: >
+|   |   |   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   +-- LIST: While-2
+|   |   |   |   |   +-- ASSIGN_STMT
+|   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   +-- BINARY_OP: +
+|   |   |   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   +-- RETURN_STMT
+|   |   |   |   +-- CONST (int value: 0)
+
+--- Permanent Symbol Table ---
+ID    Name                 Type            Data Type  Scope      Shape     
+---------------------------------------------------------------------------
+0     getint               function        int        1          N/A       
+1     getch                function        int        1          N/A       
+2     getfloat             function        float      1          N/A       
+3     getarray             function        int        1          N/A       
+4     array                array           int        2          0
+5     getfarray            function        int        1          N/A       
+6     array                array           float      2          0
+7     putint               function        void       1          N/A       
+8     value                var             int        2          N/A       
+9     putch                function        void       1          N/A       
+10    value                var             int        2          N/A       
+11    putfloat             function        void       1          N/A       
+12    value                var             float      2          N/A       
+13    putarray             function        void       1          N/A       
+14    len                  var             int        2          N/A       
+15    array                array           int        2          0
+16    putfarray            function        void       1          N/A       
+17    len                  var             int        2          N/A       
+18    array                array           float      2          0
+19    putf                 function        void       1          N/A       
+20    format_string        var             char       2          N/A       
+21    value                var             int        2          N/A       
+22    starttime            function        void       1          N/A       
+23    stoptime             function        void       1          N/A       
+24    main                 function        int        1          N/A       
+25    a                    var             int        3          N/A       
+26    b                    var             int        3          N/A       
+---------------------------------------------------------------------------
+
+--- Generated IR ---
+; ModuleID = 'main'
+
+define i32 @main() {
+entry:
+  %a_25 = alloca i32
+  store i32 1, i32* %a_25
+  %b_26 = alloca i32
+  store i32 2, i32* %b_26
+  %0 = load i32, i32* %a_25
+  %1 = load i32, i32* %b_26
+  %lt_2 = icmp slt i32 %0, %1
+  br i1 %lt_2, label %or.merge.4, label %or.rhs.3
+or.rhs.3:
+  %5 = load i32, i32* %a_25
+  %gt_6 = icmp sgt i32 %5, 0
+  br i1 %gt_6, label %and.rhs.7, label %and.merge.8
+or.merge.4:
+  %or.result.12 = phi i1 [ 1, %entry ], [ %and.result.11, %and.merge.8 ]
+  br i1 %or.result.12, label %if.then.13, label %if.merge.14
+and.rhs.7:
+  %9 = load i32, i32* %b_26
+  %gt_10 = icmp sgt i32 %9, 0
+  br label %and.merge.8
+and.merge.8:
+  %and.result.11 = phi i1 [ 0, %or.rhs.3 ], [ %gt_10, %and.rhs.7 ]
+  br label %or.merge.4
+if.then.13:
+  %15 = load i32, i32* %a_25
+  %add_16 = add i32 %15, 1
+  store i32 %add_16, i32* %a_25
+  br label %if.merge.14
+if.merge.14:
+  %17 = load i32, i32* %a_25
+  %18 = load i32, i32* %b_26
+  %lt_19 = icmp slt i32 %17, %18
+  br i1 %lt_19, label %or.merge.21, label %or.rhs.20
+or.rhs.20:
+  %22 = load i32, i32* %a_25
+  %gt_23 = icmp sgt i32 %22, 0
+  br i1 %gt_23, label %and.rhs.24, label %and.merge.25
+or.merge.21:
+  %or.result.29 = phi i1 [ 1, %if.merge.14 ], [ %and.result.28, %and.merge.25 ]
+  br i1 %or.result.29, label %if.then.30, label %if.else.31
+and.rhs.24:
+  %26 = load i32, i32* %b_26
+  %gt_27 = icmp sgt i32 %26, 0
+  br label %and.merge.25
+and.merge.25:
+  %and.result.28 = phi i1 [ 0, %or.rhs.20 ], [ %gt_27, %and.rhs.24 ]
+  br label %or.merge.21
+if.then.30:
+  %33 = load i32, i32* %a_25
+  %add_34 = add i32 %33, 1
+  store i32 %add_34, i32* %a_25
+  br label %if.merge.32
+if.else.31:
+  %35 = load i32, i32* %a_25
+  %sub_36 = sub i32 %35, 1
+  store i32 %sub_36, i32* %a_25
+  br label %if.merge.32
+if.merge.32:
+  br label %while.cond.37
+while.cond.37:
+  %38 = load i32, i32* %a_25
+  %39 = load i32, i32* %b_26
+  %lt_40 = icmp slt i32 %38, %39
+  br i1 %lt_40, label %or.merge.42, label %or.rhs.41
+or.rhs.41:
+  %43 = load i32, i32* %a_25
+  %gt_44 = icmp sgt i32 %43, 0
+  br i1 %gt_44, label %and.rhs.45, label %and.merge.46
+or.merge.42:
+  %or.result.50 = phi i1 [ 1, %while.cond.37 ], [ %and.result.49, %and.merge.46 ]
+  br i1 %or.result.50, label %while.loop.51, label %while.merge.52
+and.rhs.45:
+  %47 = load i32, i32* %b_26
+  %gt_48 = icmp sgt i32 %47, 0
+  br label %and.merge.46
+and.merge.46:
+  %and.result.49 = phi i1 [ 0, %or.rhs.41 ], [ %gt_48, %and.rhs.45 ]
+  br label %or.merge.42
+while.loop.51:
+  %53 = load i32, i32* %a_25
+  %add_54 = add i32 %53, 1
+  store i32 %add_54, i32* %a_25
+  br label %while.cond.37
+while.merge.52:
+  ret i32 0
+}
+
+
