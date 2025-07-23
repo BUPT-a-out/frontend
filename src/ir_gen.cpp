@@ -497,15 +497,18 @@ midend::Value* translate_node(
                     midend::Type* element_type =
                         static_cast<midend::PointerType*>(type)
                             ->getElementType();
-                    return element_type->isArrayType()
-                               ? it->second
-                               : builder.createLoad(it->second,
-                                                    std::to_string(temp_idx++));
+                    if (element_type->isArrayType()) {
+                        return it->second;
+                    } else {
+                        return builder.createLoad(it->second,
+                                                  std::to_string(temp_idx++));
+                    }
                 } else {
                     return it->second;
                 }
             }
 
+            // 从全局变量映射中查找
             auto global_it = global_var_tab.find(symbol->id);
             if (global_it != global_var_tab.end()) {
                 midend::GlobalVariable* global_var = global_it->second;
@@ -519,7 +522,8 @@ midend::Value* translate_node(
             return nullptr;
         }
 
-        case NODE_ARRAY_ACCESS: {
+        case NODE_ARRAY_ACCESS:
+        case NODE_CONST_ARRAY_ACCESS: {
             SymbolPtr symbol = node->data.symb_ptr;
             if (node->data_type != SYMB_DATA && !symbol) return nullptr;
 
@@ -820,8 +824,7 @@ midend::Value* translate_node(
                 "if.merge." + std::to_string(temp_idx++), current_func);
 
             // 如果then块没有终结指令，添加到merge块的跳转
-            if (!block_after_then->getTerminator())
-                builder.createBr(mergeBB);
+            if (!block_after_then->getTerminator()) builder.createBr(mergeBB);
 
             // 根据条件跳转
             builder.setInsertPoint(block_after_cond);
@@ -1051,9 +1054,11 @@ std::unique_ptr<midend::Module> translate_root(ASTNodePtr node) {
                 auto linkage = is_const
                                    ? midend::GlobalVariable::InternalLinkage
                                    : midend::GlobalVariable::ExternalLinkage;
-                midend::GlobalVariable::Create(var_type, is_const, linkage,
-                                               init, get_symbol_name(sym),
-                                               module.get());
+                midend::GlobalVariable* global_var =
+                    midend::GlobalVariable::Create(var_type, is_const, linkage,
+                                                   init, get_symbol_name(sym),
+                                                   module.get());
+                global_var_tab[sym->id] = global_var;
                 break;
             }
             case NODE_ARRAY_DEF:
