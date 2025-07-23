@@ -581,9 +581,13 @@ midend::Value* translate_node(
 
                 // 创建用于短路求值的基本块
                 midend::BasicBlock* rhsBB = builder.createBasicBlock(
-                    (op_name == "&&" ? "and.rhs." : "or.rhs.") + std::to_string(temp_idx++), current_func);
+                    (op_name == "&&" ? "and.rhs." : "or.rhs.") +
+                        std::to_string(temp_idx++),
+                    current_func);
                 midend::BasicBlock* mergeBB = builder.createBasicBlock(
-                    (op_name == "&&" ? "and.merge." : "or.merge.") + std::to_string(temp_idx++), current_func);
+                    (op_name == "&&" ? "and.merge." : "or.merge.") +
+                        std::to_string(temp_idx++),
+                    current_func);
 
                 // 保存当前基本块
                 midend::BasicBlock* currentBB = builder.getInsertBlock();
@@ -657,8 +661,15 @@ midend::Value* translate_node(
                 return builder.createSub(builder.getInt32(0), operand,
                                          "neg_" + std::to_string(temp_idx++));
             } else if (op_name == "!") {
-                return builder.createNot(operand,
-                                         "not_" + std::to_string(temp_idx++));
+                // 如果操作数是 i32，直接用 icmp eq 0 实现逻辑非
+                if (operand->getType()->getBitWidth() != 1) {
+                    return builder.createICmpEQ(operand, builder.getInt32(0),
+                                               "not." + std::to_string(temp_idx++));
+                } else {
+                    // 如果已经是 i1 类型，使用 icmp eq 与 false 比较
+                    return builder.createICmpEQ(operand, builder.getFalse(),
+                                               "not." + std::to_string(temp_idx++));
+                }
             }
 
             return nullptr;
