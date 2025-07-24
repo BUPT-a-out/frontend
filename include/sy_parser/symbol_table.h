@@ -40,6 +40,7 @@ typedef struct {
 // Information about a function symbol
 typedef struct {
     int param_count;
+    int call_count;
     struct Symbol** params;  // Array of pointers to parameter symbols
 } FuncInfo;
 

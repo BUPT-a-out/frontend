@@ -1168,7 +1168,7 @@ std::unique_ptr<midend::Module> generate_IR(FILE* file_in) {
     auto module = std::make_unique<midend::Module>("main", ctx);
 
     init_symbol_management();
-    add_runtime_lib_symbols(module.get());
+    add_runtime_lib_to_symbol_table();
 
 #ifdef DEBUG
     if (!yyparse()) {
@@ -1183,6 +1183,7 @@ std::unique_ptr<midend::Module> generate_IR(FILE* file_in) {
     yyparse();
 #endif
 
+    add_runtime_lib_to_func_tab(module.get());
     translate_root(root, module.get());
 
 #ifdef DEBUG

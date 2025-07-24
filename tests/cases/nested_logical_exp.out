@@ -58,30 +58,30 @@ ID    Name                 Type            Data Type  Scope      Shape
 
 define i32 @main() {
 entry:
-  br i1 1, label %if.then.0, label %if.else.4
-if.then.0:
-  br i1 1, label %if.then.1, label %if.else.2
-if.then.1:
-  br label %if.merge.3
-if.else.2:
-  br label %if.merge.3
-if.merge.3:
-  br label %if.merge.11
-if.else.4:
-  br label %while.cond.5
-while.cond.5:
-  br i1 0, label %while.loop.6, label %while.merge.10
-while.loop.6:
-  br i1 1, label %if.then.7, label %if.else.8
-if.then.7:
-  br label %if.merge.9
-if.else.8:
-  br label %if.merge.9
-if.merge.9:
-  br label %while.cond.5
-while.merge.10:
-  br label %if.merge.11
-if.merge.11:
+  br i1 1, label %if.0.then, label %if.0.else
+if.0.then:
+  br i1 1, label %if.1.then, label %if.1.else
+if.1.then:
+  br label %if.1.merge
+if.1.else:
+  br label %if.1.merge
+if.1.merge:
+  br label %if.0.merge
+if.0.else:
+  br label %while.2.cond
+while.2.cond:
+  br i1 0, label %while.2.loop, label %while.2.merge
+while.2.loop:
+  br i1 1, label %if.3.then, label %if.3.else
+if.3.then:
+  br label %if.3.merge
+if.3.else:
+  br label %if.3.merge
+if.3.merge:
+  br label %while.2.cond
+while.2.merge:
+  br label %if.0.merge
+if.0.merge:
   ret i32 0
 }
 

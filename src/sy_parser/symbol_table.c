@@ -135,6 +135,7 @@ SymbolPtr define_symbol(const char* name, SymbolType sym_type,
     // Initialize attributes union
     if (sym_type == SYMB_FUNCTION) {
         new_sym->attributes.func_info.param_count = 0;
+        new_sym->attributes.func_info.call_count = 0;
         new_sym->attributes.func_info.params = NULL;
     } else if (sym_type == SYMB_ARRAY || sym_type == SYMB_CONST_ARRAY) {
         new_sym->attributes.array_info.dimensions = 0;

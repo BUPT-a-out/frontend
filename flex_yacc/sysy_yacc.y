@@ -383,6 +383,7 @@ UnaryExp:
             yyerror("Undeclared function");
             YYERROR;
         }
+        sym->attributes.func_info.call_count++;
         NodeData data;
         data.symb_ptr = sym;
         set_ast_node_data($3, NODE_FUNC_CALL, $1, data, SYMB_DATA, yylineno);

@@ -76,51 +76,51 @@ ID    Name                 Type            Data Type  Scope      Shape
 
 define i32 @main() {
 entry:
-  %a_25 = alloca i32
-  store i32 0, i32* %a_25
-  %b_26 = alloca i32
-  store i32 1, i32* %b_26
-  %result_27 = alloca i32
-  store i32 0, i32* %result_27
-  %0 = load i32, i32* %a_25
+  %a.25 = alloca i32
+  store i32 0, i32* %a.25
+  %b.26 = alloca i32
+  store i32 1, i32* %b.26
+  %result.27 = alloca i32
+  store i32 0, i32* %result.27
+  %0 = load i32, i32* %a.25
   %tobool.1 = icmp ne i32 %0, 0
-  br i1 %tobool.1, label %and.rhs.2, label %and.merge.3
-and.rhs.2:
-  %4 = load i32, i32* %b_26
+  br i1 %tobool.1, label %and.1.rhs, label %and.1.merge
+and.1.rhs:
+  %2 = load i32, i32* %b.26
+  %tobool.3 = icmp ne i32 %2, 0
+  br label %and.1.merge
+and.1.merge:
+  %and.1.result = phi i1 [ 0, %entry ], [ %tobool.3, %and.1.rhs ]
+  br i1 %and.1.result, label %if.0.then, label %if.0.merge
+if.0.then:
+  store i32 1, i32* %result.27
+  br label %if.0.merge
+if.0.merge:
+  %4 = load i32, i32* %b.26
   %tobool.5 = icmp ne i32 %4, 0
-  br label %and.merge.3
-and.merge.3:
-  %and.result.6 = phi i1 [ 0, %entry ], [ %tobool.5, %and.rhs.2 ]
-  br i1 %and.result.6, label %if.then.7, label %if.merge.8
-if.then.7:
-  store i32 1, i32* %result_27
-  br label %if.merge.8
-if.merge.8:
-  %9 = load i32, i32* %b_26
-  %tobool.10 = icmp ne i32 %9, 0
-  br i1 %tobool.10, label %or.merge.12, label %or.rhs.11
-or.rhs.11:
-  %13 = load i32, i32* %a_25
-  %tobool.14 = icmp ne i32 %13, 0
-  br label %or.merge.12
-or.merge.12:
-  %or.result.15 = phi i1 [ 1, %if.merge.8 ], [ %tobool.14, %or.rhs.11 ]
-  br i1 %or.result.15, label %if.then.16, label %if.merge.19
-if.then.16:
-  %17 = load i32, i32* %result_27
-  %add_18 = add i32 %17, 10
-  store i32 %add_18, i32* %result_27
-  br label %if.merge.19
-if.merge.19:
-  %20 = load i32, i32* %result_27
-  %not.21 = icmp eq i32 %20, 0
-  br i1 %not.21, label %if.then.22, label %if.merge.24
-if.then.22:
-  %23 = load i32, i32* %b_26
-  ret i32 %23
-if.merge.24:
-  %25 = load i32, i32* %result_27
-  ret i32 %25
+  br i1 %tobool.5, label %or.3.merge, label %or.3.rhs
+or.3.rhs:
+  %6 = load i32, i32* %a.25
+  %tobool.7 = icmp ne i32 %6, 0
+  br label %or.3.merge
+or.3.merge:
+  %or.3.result = phi i1 [ 1, %if.0.merge ], [ %tobool.7, %or.3.rhs ]
+  br i1 %or.3.result, label %if.2.then, label %if.2.merge
+if.2.then:
+  %8 = load i32, i32* %result.27
+  %add.9 = add i32 %8, 10
+  store i32 %add.9, i32* %result.27
+  br label %if.2.merge
+if.2.merge:
+  %10 = load i32, i32* %result.27
+  %not.11 = icmp eq i32 %10, 0
+  br i1 %not.11, label %if.4.then, label %if.4.merge
+if.4.then:
+  %12 = load i32, i32* %b.26
+  ret i32 %12
+if.4.merge:
+  %13 = load i32, i32* %result.27
+  ret i32 %13
 }
 
 
