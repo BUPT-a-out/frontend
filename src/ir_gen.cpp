@@ -1054,7 +1054,7 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
 
     // 创建基本块
     midend::BasicBlock* entry_bb =
-        midend::BasicBlock::Create(ctx, "entry", func);
+        midend::BasicBlock::Create(ctx, func_name + ".entry", func);
     midend::IRBuilder builder(entry_bb);
 
     // 在函数体内部定义函数形参
