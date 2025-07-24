@@ -70,9 +70,6 @@ typedef struct SymbolTable {
 // Lookup symbol in global symbol table
 SymbolPtr get_symbol_by_id(int id);
 
-// 添加运行时库符号表函数声明
-void add_runtime_lib_symbols();
-
 // - Debugging -
 
 const char* symbol_type_to_string(SymbolType type);

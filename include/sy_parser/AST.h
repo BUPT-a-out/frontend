@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 
-#include "symbol_table.h"
+#include "sy_parser/symbol_table.h"
 
 // --- AST ---
 

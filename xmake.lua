@@ -36,15 +36,15 @@ target("bison_gen")
         local incdir = path.join(script_dir, "include")
         
         local yacc_input = path.join(lydir, "sysy_yacc.y")
-        local yacc_output = path.join(srcdir, "y.tab.c")
-        local yacc_header = path.join(incdir, "y.tab.h")
+        local yacc_output = path.join(srcdir, "sy_parser/y.tab.c")
+        local yacc_header = path.join(incdir, "sy_parser/y.tab.h")
         
         if not os.isfile(yacc_output) or os.mtime(yacc_input) > os.mtime(yacc_output) then
             print("Generating parser with bison...")
             os.mkdir(incdir)
             os.execv(bison.program, {"-d", "-o", yacc_output, yacc_input})
             
-            local temp_header = path.join(srcdir, "y.tab.h")
+            local temp_header = path.join(srcdir, "sy_parser/y.tab.h")
             if os.isfile(temp_header) then
                 os.mv(temp_header, yacc_header)
             end
@@ -68,7 +68,7 @@ target("flex_gen")
         local srcdir = path.join(script_dir, "src")
 
         local flex_input = path.join(lydir, "sysy_flex.l")
-        local flex_output = path.join(srcdir, "lex.yy.c")
+        local flex_output = path.join(srcdir, "sy_parser/lex.yy.c")
         
         if not os.isfile(flex_output) or os.mtime(flex_input) > os.mtime(flex_output) then
             print("Generating lexer with flex...")
@@ -83,10 +83,10 @@ target("frontend")
     add_deps("flex_gen")
     
     add_files(
-        "src/utils.c",
-        "src/AST.c",
-        "src/symbol_table.c",
-        "src/runtime_lib_symbols.c",
+        "src/sy_parser/utils.c",
+        "src/sy_parser/AST.c",
+        "src/sy_parser/symbol_table.c",
+        "src/runtime_lib_def.cpp",
         "src/ir_gen.cpp"
     )
     
@@ -96,8 +96,8 @@ target("frontend")
         local srcdir = path.join(script_dir, "src")
         local incdir = path.join(script_dir, "include")
         
-        local yacc_output = path.join(srcdir, "y.tab.c")
-        local flex_output = path.join(srcdir, "lex.yy.c")
+        local yacc_output = path.join(srcdir, "sy_parser/y.tab.c")
+        local flex_output = path.join(srcdir, "sy_parser/lex.yy.c")
         
         if not os.isfile(yacc_output) or not os.isfile(flex_output) then
             print("Pre-generating parser files...")
@@ -108,12 +108,12 @@ target("frontend")
                 local bison = find_tool("bison")
                 if bison then
                     local yacc_input = path.join(lydir, "sysy_yacc.y")
-                    local yacc_header = path.join(incdir, "y.tab.h")
+                    local yacc_header = path.join(incdir, "sy_parser/y.tab.h")
                     
                     os.mkdir(incdir)
                     os.execv(bison.program, {"-d", "-o", yacc_output, yacc_input})
                     
-                    local temp_header = path.join(srcdir, "y.tab.h")
+                    local temp_header = path.join(srcdir, "sy_parser/y.tab.h")
                     if os.isfile(temp_header) then
                         os.mv(temp_header, yacc_header)
                     end
@@ -137,6 +137,7 @@ target("frontend")
     end)
     
     add_includedirs("include", {public = true})
+    add_includedirs("include/sy_parser", {public = true})
     
     add_headerfiles("include/(**.h)")
     
@@ -214,9 +215,9 @@ task("clean")
         
         -- Generated files to clean
         local generated_files = {
-            path.join(script_dir, "src", "lex.yy.c"),
-            path.join(script_dir, "src", "y.tab.c"),
-            path.join(script_dir, "include", "y.tab.h")
+            path.join(script_dir, "src", "sy_parser/lex.yy.c"),
+            path.join(script_dir, "src", "sy_parser/y.tab.c"),
+            path.join(script_dir, "include", "sy_parser/y.tab.h")
         }
         
         -- Build directory
@@ -408,5 +409,57 @@ task("format")
             os.exit(1)
         else
             cprint("${green}All files are properly formatted!")
+        end
+    end)
+
+task("std_parse")
+    set_menu {
+        usage = "xmake std_parse <prefix>",
+        description = "用解析器解析functional/functional目录下以<前缀>开头的所有文件",
+        options = {
+            {nil, "prefix", "v", nil, "文件名前缀"},
+        }
+    }
+    on_run(function ()
+        import("core.base.option")
+        import("core.base.task")
+        import("core.project.project")
+        local prefix = option.get("prefix")
+        if not prefix then
+            print("Error: 请指定文件名前缀")
+            print("Usage: xmake std_parse <prefix>")
+            return
+        end
+        local dir = "/home/thatyear/projects/contest/compiler_design/functional/functional"
+        if not os.isdir(dir) then
+            print("Error: 目标目录不存在: " .. dir)
+            return
+        end
+        -- 查找所有以prefix开头且以.sy结尾的文件
+        local files = {}
+        for _, file in ipairs(os.files(path.join(dir, prefix .. "*.sy"))) do
+            table.insert(files, file)
+        end
+        if #files == 0 then
+            print("未找到以" .. prefix .. "开头的文件")
+            return
+        end
+        -- 构建解析器
+        task.run("build", {target="parser"})
+        local target = project.target("parser")
+        local parser_exe = target:targetfile()
+        if not os.isfile(parser_exe) then
+            print("Error: 解析器可执行文件未找到")
+            return
+        end
+        for _, file in ipairs(files) do
+            print("解析: " .. file)
+            local outdata, errdata = os.iorunv(parser_exe, {file})
+            if outdata then
+                print(outdata)
+            end
+            if errdata and #errdata > 0 then
+                print("[Error] " .. errdata)
+            end
         end
     end)

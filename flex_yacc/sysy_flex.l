@@ -2,8 +2,8 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
-    #include "y.tab.h"
-    #include "utils.h"
+    #include "sy_parser/y.tab.h"
+    #include "sy_parser/utils.h"
 
     extern int fileno(FILE *stream);
     extern int yylineno;

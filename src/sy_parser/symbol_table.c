@@ -1,10 +1,10 @@
-#include "symbol_table.h"
+#include "sy_parser/symbol_table.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "utils.h"
+#include "sy_parser/utils.h"
 
 // Symbol Table instance
 static SymbolTable permanent_table;

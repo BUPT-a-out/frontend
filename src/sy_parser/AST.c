@@ -1,10 +1,10 @@
-#include "AST.h"
+#include "sy_parser/AST.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "symbol_table.h"
-#include "utils.h"
+#include "sy_parser/symbol_table.h"
+#include "sy_parser/utils.h"
 
 ASTNodePtr create_ast_node(NodeType type, const char* name, int lineno,
                            int num_children, ...) {

@@ -5,9 +5,9 @@
     #include <stdbool.h>
     #include <ctype.h>
     #include <math.h>
-    #include "y.tab.h"
-    #include "AST.h"
-    #include "symbol_table.h"
+    #include "sy_parser/y.tab.h"
+    #include "sy_parser/AST.h"
+    #include "sy_parser/symbol_table.h"
 
     extern int yylineno;
     extern FILE *yyin;
@@ -101,17 +101,24 @@ ConstDimBrackets:
     ;
 
 ConstDecl:
-    CONST BType ConstDefList ';' {
-        for (int i = 0; i < $3->child_count; ++i)
-            var_def($3->children[i], $2->data.data_type);
-        free_ast($2);
-        $$ = $3;
-    }
+    ConstDefList ';' { $$ = $1; }
     ;
 
 ConstDefList:
-    ConstDef { $$ = create_ast_node(NODE_LIST, "ConstDefs", yylineno, 1, $1); }
-    | ConstDefList ',' ConstDef { add_child($1, $3); $$ = $1; }
+    CONST BType ConstDef {
+        var_def($3, $2->data.data_type);
+        $$ = create_ast_node(NODE_LIST, "ConstDefs", yylineno, 1, $3);
+    }
+    | ConstDefList ',' ConstDef {
+        DataType data_type = DATA_INT;
+        if ($1->children[0]) {
+            if ($1->children[0]->data.symb_ptr)
+                data_type = $1->children[0]->data.symb_ptr->data_type;
+        }
+        var_def($3, data_type);
+        add_child($1, $3);
+        $$ = $1;
+    }
     ;
 
 ConstDef:
@@ -135,17 +142,24 @@ ConstInitValList:
     ;
 
 VarDecl:
-    BType VarDefList ';' {
-        for (int i = 0; i < $2->child_count; ++i)
-            var_def($2->children[i], $1->data.data_type);
-        free_ast($1);
-        $$ = $2;
-    }
+    VarDefList ';' { $$ = $1; }
     ;
 
 VarDefList:
-    VarDef { $$ = create_ast_node(NODE_LIST, "VarDefs", yylineno, 1, $1); }
-    | VarDefList ',' VarDef { add_child($1, $3); $$ = $1; }
+    BType VarDef {
+        var_def($2, $1->data.data_type);
+        $$ = create_ast_node(NODE_LIST, "VarDefs", yylineno, 1, $2);
+    }
+    | VarDefList ',' VarDef {
+        DataType data_type = DATA_INT;
+        if ($1->children[0]) {
+            if ($1->children[0]->data.symb_ptr)
+                data_type = $1->children[0]->data.symb_ptr->data_type;
+        }
+        var_def($3, data_type);
+        add_child($1, $3);
+        $$ = $1;
+    }
     ;
 
 VarDef:
@@ -207,7 +221,12 @@ BlockEnter:
 BlockItem:
     /* empty */  { $$ = create_ast_node(NODE_LIST, "Block", yylineno, 0); }
     | BlockItem Decl { shift_child($2, $1); free_ast($2); $$ = $1; }
-    | BlockItem Stmt { if ($2->child_count) add_child($1, $2); $$ = $1; }
+    | BlockItem Stmt {
+        if ($2->node_type == NODE_LIST) {
+            if ($2->child_count) add_child($1, $2);
+        } else add_child($1, $2);
+        $$ = $1;
+    }
     ;
 
 Block:
@@ -491,10 +510,21 @@ void var_def(ASTNodePtr var_node, DataType data_type) {
         case NODE_CONST_VAR_DEF:
             if (var_node->child_count == 0) return;
             ASTNodePtr init_node = var_node->children[0];
-            if (init_node->data_type == INT_DATA)
-                sym->attributes.const_info.int_value = init_node->data.direct_int;
-            else if (init_node->data_type == FLOAT_DATA)
-                sym->attributes.const_info.float_value = init_node->data.direct_float;
+            if (data_type == DATA_INT) {
+                int init_value = 0;
+                if (init_node->data_type == INT_DATA)
+                    init_value = init_node->data.direct_int;
+                else if (init_node->data_type == FLOAT_DATA)
+                    init_value = (int)init_node->data.direct_float;
+                sym->attributes.const_info.int_value = init_value;
+            } else if (data_type == DATA_FLOAT) {
+                float init_value = 0.0;
+                if (init_node->data_type == INT_DATA)
+                    init_value = (float)init_node->data.direct_int;
+                else if (init_node->data_type == FLOAT_DATA)
+                    init_value = init_node->data.direct_float;
+                sym->attributes.const_info.float_value = init_value;
+            }
             break;
         case NODE_ARRAY_DEF:
         case NODE_CONST_ARRAY_DEF:
@@ -505,8 +535,12 @@ void var_def(ASTNodePtr var_node, DataType data_type) {
 
             for (int j = 0; j < dim_count; ++j) {
                 ASTNodePtr dim_node = dim->children[j];
-                if (dim_node->data_type != INT_DATA) break;
-                sym->attributes.array_info.shape[j] = dim_node->data.direct_int;
+                int dim_size = 0;
+                if (dim_node->data_type == INT_DATA)
+                    dim_size = dim_node->data.direct_int;
+                else if (dim_node->data_type == FLOAT_DATA)
+                    dim_size = (int)dim_node->data.direct_float;
+                sym->attributes.array_info.shape[j] = dim_size;
             }
 
             free_ast(dim);
