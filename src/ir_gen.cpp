@@ -380,8 +380,11 @@ void initialize_array_elements(
     else
         fill_data = builder.getInt32(0);
     builder.createStore(fill_data, elem_ptr);
-    builder.createStore(builder.createAdd(i_alloca, builder.getInt32(1)),
-                        i_alloca);
+    midend::Value* i_old_value =
+        builder.createLoad(i_alloca, std::to_string(var_idx++));
+    midend::Value* i_new_value = builder.createAdd(
+        i_old_value, builder.getInt32(1), std::to_string(var_idx++));
+    builder.createStore(i_new_value, i_alloca);
     builder.createBr(condBB);
 
     // merge基本块
@@ -390,8 +393,10 @@ void initialize_array_elements(
 
     // 循环转移
     builder.setInsertPoint(condBB);
+    midend::Value* i_value =
+        builder.createLoad(i_alloca, std::to_string(var_idx++));
     midend::Value* cond = builder.createICmpSLT(
-        i_alloca, top_bound, "lt." + std::to_string(var_idx++));
+        i_value, top_bound, "lt." + std::to_string(var_idx++));
     builder.createCondBr(cond, loopBB, mergeBB);
 
     // 继续在merge块中插入代码
