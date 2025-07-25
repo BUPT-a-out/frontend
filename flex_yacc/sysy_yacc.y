@@ -290,11 +290,11 @@ ConstExp:
 LVal:
     IDENTIFIER {
         SymbolPtr sym = lookup_symbol($1);
+        NodeData data;
         if (!sym) {
             yyerror("Undeclared identifier");
             YYERROR;
         }
-        NodeData data;
         data.symb_ptr = sym;
         switch (sym->symbol_type) {
             case SYMB_VAR:
@@ -318,11 +318,11 @@ LVal:
     }
     | IDENTIFIER DimBrackets {
         SymbolPtr sym = lookup_symbol($1);
+        NodeData data;
         if (!sym) {
             yyerror("Undeclared identifier");
             YYERROR;
         }
-        NodeData data;
         data.symb_ptr = sym;
         switch (sym->symbol_type) {
             case SYMB_ARRAY:
@@ -379,12 +379,12 @@ UnaryExp:
     }
     | IDENTIFIER '(' FuncRParams ')' {
         SymbolPtr sym = lookup_symbol($1);
+        NodeData data;
         if (!sym) {
             yyerror("Undeclared function");
             YYERROR;
         }
         sym->attributes.func_info.call_count++;
-        NodeData data;
         data.symb_ptr = sym;
         set_ast_node_data($3, NODE_FUNC_CALL, $1, data, SYMB_DATA, yylineno);
         $$ = $3;
@@ -507,44 +507,56 @@ void var_def(ASTNodePtr var_node, DataType data_type) {
     SymbolType sym_type = node_type_to_sym_type(var_node->node_type);
     SymbolPtr sym = define_symbol(
         var_node->name, sym_type, data_type, var_node->lineno);
+    // var for VAR
+    ASTNodePtr var_init_node;
+    int int_init_value;
+    float float_init_value;
+    // var for ARRAY
+    ASTNodePtr dim_node, single_dim_node;
+    int dim_count, dim_size, j;
+
     switch (var_node->node_type) {
         case NODE_CONST_VAR_DEF:
             if (var_node->child_count == 0) return;
-            ASTNodePtr init_node = var_node->children[0];
+            var_init_node = var_node->children[0];
             if (data_type == DATA_INT) {
-                int init_value = 0;
-                if (init_node->data_type == INT_DATA)
-                    init_value = init_node->data.direct_int;
-                else if (init_node->data_type == FLOAT_DATA)
-                    init_value = (int)init_node->data.direct_float;
-                sym->attributes.const_info.int_value = init_value;
+                int_init_value = 0;
+                if (var_init_node->data_type == INT_DATA)
+                    int_init_value = var_init_node->data.direct_int;
+                else if (var_init_node->data_type == FLOAT_DATA)
+                    int_init_value = (int)var_init_node->data.direct_float;
+                sym->attributes.const_info.int_value = int_init_value;
             } else if (data_type == DATA_FLOAT) {
-                float init_value = 0.0;
-                if (init_node->data_type == INT_DATA)
-                    init_value = (float)init_node->data.direct_int;
-                else if (init_node->data_type == FLOAT_DATA)
-                    init_value = init_node->data.direct_float;
-                sym->attributes.const_info.float_value = init_value;
+                float_init_value = 0.0;
+                if (var_init_node->data_type == INT_DATA)
+                    float_init_value = (float)var_init_node->data.direct_int;
+                else if (var_init_node->data_type == FLOAT_DATA)
+                    float_init_value = var_init_node->data.direct_float;
+                sym->attributes.const_info.float_value = float_init_value;
             }
             break;
         case NODE_ARRAY_DEF:
         case NODE_CONST_ARRAY_DEF:
-            ASTNodePtr dim = var_node->children[0];
-            int dim_count = dim->child_count;
+            dim_node = var_node->children[0];
+            dim_count = dim_node->child_count;
             sym->attributes.array_info.dimensions = dim_count;
+            sym->attributes.array_info.elem_num = 1;
             sym->attributes.array_info.shape = (int*)malloc(sizeof(int) * dim_count);
 
-            for (int j = 0; j < dim_count; ++j) {
-                ASTNodePtr dim_node = dim->children[j];
-                int dim_size = 0;
-                if (dim_node->data_type == INT_DATA)
-                    dim_size = dim_node->data.direct_int;
-                else if (dim_node->data_type == FLOAT_DATA)
-                    dim_size = (int)dim_node->data.direct_float;
+            for (j = 0; j < dim_count; ++j) {
+                single_dim_node = dim_node->children[j];
+                dim_size = 0;
+                if (single_dim_node->data_type == INT_DATA)
+                    dim_size = single_dim_node->data.direct_int;
+                else if (single_dim_node->data_type == FLOAT_DATA)
+                    dim_size = (int)single_dim_node->data.direct_float;
                 sym->attributes.array_info.shape[j] = dim_size;
+                if (dim_size)
+                    sym->attributes.array_info.elem_num =
+                        sym->attributes.array_info.elem_num * dim_size;
             }
 
-            free_ast(dim);
+            free_ast(dim_node);
             var_node->children[0] = NULL;
             // 可根据 valid 变量决定后续处理
             break;
@@ -557,17 +569,23 @@ void var_def(ASTNodePtr var_node, DataType data_type) {
 
 ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params) {
     SymbolPtr func_sym = define_symbol(name, SYMB_FUNCTION, type, yylineno);
+    NodeData data;
+    ASTNodePtr output;
+    // var in loop
+    int param_count;
+    ASTNodePtr param_node, type_node, var_node;
+
     enter_scope();
     if (params) {
-        int param_count = params->child_count;
+        param_count = params->child_count;
         if (param_count > 0) {
             func_sym->attributes.func_info.param_count = param_count;
             func_sym->attributes.func_info.params = (SymbolPtr*)malloc(
                 sizeof(SymbolPtr) * param_count);
             for (int i = 0; i < param_count; ++i) {
-                ASTNodePtr param_node = params->children[i];
-                ASTNodePtr type_node = param_node->children[0];
-                ASTNodePtr var_node = param_node->children[1];
+                param_node = params->children[i];
+                type_node = param_node->children[0];
+                var_node = param_node->children[1];
                 var_def(var_node, type_node->data.data_type);
                 func_sym->attributes.func_info.params[i] = var_node->data.symb_ptr;
 
@@ -577,21 +595,22 @@ ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params) {
             }
         }
     }
-    NodeData data;
     data.symb_ptr = func_sym;
-    ASTNodePtr output = create_ast_node(NODE_FUNC_DEF, name, yylineno, 1, params);
+    output = create_ast_node(NODE_FUNC_DEF, name, yylineno, 1, params);
     set_ast_node_data(output, HOLD_NODETYPE, NULL, data, SYMB_DATA, -1);
     return output;
 }
 
 ASTNodePtr get_const_value(ASTNodePtr node) {
+    SymbolPtr sym;
+    ASTNodePtr valued;
+    NodeData data;
+
     if (!node) return node;
     if (!node->data.symb_ptr) return node;
-    SymbolPtr sym = node->data.symb_ptr;
+    sym = node->data.symb_ptr;
 
     if (node->node_type == NODE_CONST_VAR) {
-        ASTNodePtr valued;
-        NodeData data;
         if (sym->data_type == DATA_INT) {
             valued = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
             data.direct_int = sym->attributes.const_info.int_value;
@@ -607,22 +626,27 @@ ASTNodePtr get_const_value(ASTNodePtr node) {
 }
 
 ASTNodePtr fold_unary_exp(ASTNodePtr node) {
+    ASTNodePtr child;
+    ASTNodePtr folded;
+    NodeData data;
+    int valid, is_float;
+    double val, result;
+
     if (!node) return node;
     if (node->node_type != NODE_UNARY_OP) return node;
 
-    ASTNodePtr child = node->children[0];
+    child = node->children[0];
     if (child && child->node_type == NODE_CONST) {
-        NodeData data;
-        int is_float = (child->data_type == FLOAT_DATA);
-        double val = is_float ? child->data.direct_float : child->data.direct_int;
-        double result = 0;
-        int valid = 1;
+        is_float = (child->data_type == FLOAT_DATA);
+        val = is_float ? child->data.direct_float : child->data.direct_int;
+        result = 0;
+        valid = 1;
         if (strcmp(node->name, "+") == 0) result = val;
         else if (strcmp(node->name, "-") == 0) result = -val;
         else if (strcmp(node->name, "!") == 0) result = !val;
         else valid = 0;
         if (valid) {
-            ASTNodePtr folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
+            folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
             if (is_float) {
                 data.direct_float = (float)result;
                 set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, FLOAT_DATA, -1);
@@ -638,19 +662,24 @@ ASTNodePtr fold_unary_exp(ASTNodePtr node) {
 }
 
 ASTNodePtr fold_binary_exp(ASTNodePtr node) {
+    ASTNodePtr lhs, rhs;
+    ASTNodePtr folded;
+    NodeData data;
+    int is_float, valid;
+    double lval, rval, result;
+
     if (!node) return node;
     if (node->node_type != NODE_BINARY_OP) return node;
 
-    ASTNodePtr lhs = node->children[0];
-    ASTNodePtr rhs = node->children[1];
+    lhs = node->children[0];
+    rhs = node->children[1];
     // 只处理左右都是常量的情况
     if (lhs && rhs && lhs->node_type == NODE_CONST && rhs->node_type == NODE_CONST) {
-        int is_float = (lhs->data_type == FLOAT_DATA || rhs->data_type == FLOAT_DATA);
-        NodeData data;
-        double lval = (lhs->data_type == FLOAT_DATA) ? lhs->data.direct_float : lhs->data.direct_int;
-        double rval = (rhs->data_type == FLOAT_DATA) ? rhs->data.direct_float : rhs->data.direct_int;
-        double result = 0;
-        int valid = 1;
+        is_float = (lhs->data_type == FLOAT_DATA || rhs->data_type == FLOAT_DATA);
+        lval = (lhs->data_type == FLOAT_DATA) ? lhs->data.direct_float : lhs->data.direct_int;
+        rval = (rhs->data_type == FLOAT_DATA) ? rhs->data.direct_float : rhs->data.direct_int;
+        result = 0;
+        valid = 1;
         if (strcmp(node->name, "+") == 0) result = lval + rval;
         else if (strcmp(node->name, "-") == 0) result = lval - rval;
         else if (strcmp(node->name, "*") == 0) result = lval * rval;
@@ -672,7 +701,7 @@ ASTNodePtr fold_binary_exp(ASTNodePtr node) {
         else if (strcmp(node->name, "||") == 0) result = lval || rval;
         else valid = 0;
         if (valid) {
-            ASTNodePtr folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
+            folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
             if (is_float) {
                 data.direct_float = (float)result;
                 set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, FLOAT_DATA, -1);

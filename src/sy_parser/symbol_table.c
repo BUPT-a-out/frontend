@@ -52,10 +52,11 @@ Scope* create_scope() {
 }
 
 void free_scope(Scope* scope) {
+    ScopeEntry *entry, *temp;
     for (int i = 0; i < scope->capacity; ++i) {
-        ScopeEntry* entry = scope->entries[i];
+        entry = scope->entries[i];
         while (entry) {
-            ScopeEntry* temp = entry;
+            temp = entry;
             entry = entry->next;
             free(temp->name);
             free(temp);
@@ -139,6 +140,7 @@ SymbolPtr define_symbol(const char* name, SymbolType sym_type,
         new_sym->attributes.func_info.params = NULL;
     } else if (sym_type == SYMB_ARRAY || sym_type == SYMB_CONST_ARRAY) {
         new_sym->attributes.array_info.dimensions = 0;
+        new_sym->attributes.array_info.elem_num = 1;
         new_sym->attributes.array_info.shape = NULL;
     }
 
@@ -157,8 +159,9 @@ SymbolPtr define_symbol(const char* name, SymbolType sym_type,
 }
 
 SymbolPtr lookup_symbol(const char* name) {
+    SymbolPtr symbol;
     for (int i = scope_stack.top; i >= 0; i--) {
-        SymbolPtr symbol = lookup_symbol_in_scope(name, scope_stack.scopes[i]);
+        symbol = lookup_symbol_in_scope(name, scope_stack.scopes[i]);
         if (symbol) {
             return symbol;
         }
@@ -214,8 +217,9 @@ void print_symbol_table() {
     printf(
         "----------------------------------------------------------------------"
         "-----\n");
+    SymbolPtr sym_ptr;
     for (int i = 0; i < permanent_table.symb_count; i++) {
-        SymbolPtr sym_ptr = permanent_table.symbols[i];
+        sym_ptr = permanent_table.symbols[i];
         printf("%-5d %-20s %-15s %-10s %-10d", sym_ptr->id, sym_ptr->name,
                symbol_type_to_string(sym_ptr->symbol_type),
                data_type_to_string(sym_ptr->data_type), sym_ptr->scope_level);

@@ -25,13 +25,13 @@ extern "C" {
 #include "sy_parser/AST.h"
 #include "sy_parser/symbol_table.h"
 #include "sy_parser/y.tab.h"
+
 extern int yyparse(void);
+extern FILE* yyin;
+extern ASTNodePtr root;
 }
 
 #include "runtime_lib_def.h"
-
-extern FILE* yyin;
-extern ASTNodePtr root;
 
 // 全局标识符（函数、全局变量）
 std::unordered_map<int, midend::Function*> func_tab;
@@ -54,6 +54,11 @@ bool in_break_continue_pos(midend::BasicBlock* block) {
     return find(break_pos.begin(), break_pos.end(), block) != break_pos.end() ||
            find(continue_pos.begin(), continue_pos.end(), block) !=
                continue_pos.end();
+}
+
+// 获取变量在IR中的名称
+std::string get_symbol_name(SymbolPtr symbol) {
+    return std::string(symbol->name) + "." + std::to_string(symbol->id);
 }
 
 // 辅助函数：将DataType转换为IR类型
@@ -88,11 +93,13 @@ midend::Type* get_array_type(midend::Context* ctx, DataType base_type,
 }
 
 // 辅助函数：计算数组总大小
-int calculate_array_size(midend::Type* type) {
-    if (!type->isArrayType()) return 1;
-    midend::ArrayType* array_type = static_cast<midend::ArrayType*>(type);
-    return array_type->getNumElements() *
-           calculate_array_size(array_type->getElementType());
+int calculate_array_size(SymbolPtr symbol) {
+    if (symbol->symbol_type != SYMB_ARRAY) return 1;
+    int output = 1;
+    ArrayInfo array_info = symbol->attributes.array_info;
+    for (int i = 0; i < array_info.dimensions; i++)
+        output = output * array_info.shape[i];
+    return output;
 }
 
 // 辅助函数：获取多维数组的维度信息
@@ -259,20 +266,23 @@ midend::Value* translate_node(
 void process_local_array_init_recursive(
     ASTNodePtr init_list, SymbolPtr symbol, midend::IRBuilder& builder,
     std::unordered_map<int, midend::Value*>& local_vars,
-    std::vector<midend::Value*>& init_values, int& current_pos,
-    const std::vector<int>& target_dims, int current_dim) {
+    std::unordered_map<int, midend::Value*>& init_values, int& current_pos,
+    int current_dim) {
     if (!init_list) return;
+
+    // 数组信息
+    ArrayInfo array_info = symbol->attributes.array_info;
 
     for (int i = 0; i < init_list->child_count; ++i) {
         ASTNodePtr child = init_list->children[i];
 
         if (child->node_type == NODE_LIST) {
             // 嵌套初始化
-            if (current_dim < target_dims.size() - 1) {
+            if (current_dim < array_info.dimensions - 1) {
                 // 计算子数组的大小
                 int subarray_size = 1;
-                for (int j = current_dim + 1; j < target_dims.size(); j++) {
-                    subarray_size *= target_dims[j];
+                for (int j = current_dim + 1; j < array_info.dimensions; j++) {
+                    subarray_size *= array_info.shape[j];
                 }
 
                 // 对齐到子数组边界
@@ -284,23 +294,27 @@ void process_local_array_init_recursive(
                 int start_pos = current_pos;
                 process_local_array_init_recursive(
                     child, symbol, builder, local_vars, init_values,
-                    current_pos, target_dims, current_dim + 1);
+                    current_pos, current_dim + 1);
 
                 // 嵌套初始化完成后，移动到下一个子数组的开始位置
                 current_pos = start_pos + subarray_size;
             }
         } else {
             // 扁平初始化元素
-            if (current_pos < init_values.size()) {
+            if (current_pos < array_info.elem_num) {
                 midend::Value* init_val = nullptr;
 
                 if (child->node_type == NODE_CONST) {
+                    // 只考虑不为0的常数
                     if (child->data_type == INT_DATA &&
                         symbol->data_type == DATA_INT) {
-                        init_val = builder.getInt32(child->data.direct_int);
+                        if (child->data.direct_int != 0)
+                            init_val = builder.getInt32(child->data.direct_int);
                     } else if (child->data_type == FLOAT_DATA &&
                                symbol->data_type == DATA_FLOAT) {
-                        init_val = builder.getFloat(child->data.direct_float);
+                        if (child->data.direct_float != 0.0)
+                            init_val =
+                                builder.getFloat(child->data.direct_float);
                     }
                 } else if (child->node_type == NODE_ARRAY_ACCESS) {
                     // 处理数组访问表达式
@@ -322,52 +336,101 @@ void process_local_array_init_recursive(
 
 // 辅助函数：初始化数组元素
 void initialize_array_elements(
-    ASTNodePtr init_list, SymbolPtr symbol, midend::Type* array_type,
-    midend::IRBuilder& builder,
+    ASTNodePtr init_list, SymbolPtr symbol, midend::Value* array_alloca,
+    midend::IRBuilder& builder, midend::Function* current_func,
     std::unordered_map<int, midend::Value*>& local_vars) {
-    // 获取数组维度信息
-    std::vector<int> dims;
-    get_array_dimensions(array_type, dims);
+    if (array_alloca == nullptr) return;
 
-    // 计算总元素数
-    int total_size = calculate_array_size(array_type);
+    // 将多维数组解释为一维数组
+    int dim_len = symbol->attributes.array_info.elem_num;
+    int one_dim_array_shape[1] = {dim_len};
+    midend::Type* one_dim_array_type = get_array_type(
+        builder.getContext(), symbol->data_type, 1, one_dim_array_shape);
 
-    // 创建默认值
-    midend::Value* default_value = nullptr;
-    if (symbol->data_type == DATA_INT) {
-        default_value = builder.getInt32(0);
-    } else if (symbol->data_type == DATA_FLOAT) {
-        default_value = builder.getFloat(0.0f);
-    }
+    // 循环上界
+    midend::Value* top_bound = builder.getInt32(dim_len);
+    // 循环变量
+    midend::Type* var_type = builder.getContext()->getInt32Type();
+    std::string var_name = get_symbol_name(symbol) + ".initer";
+    midend::Value* i_alloca = builder.createAlloca(var_type, nullptr, var_name);
+    // 初始化
+    std::string current_block_id = std::to_string(block_idx++);
+    builder.createStore(builder.getInt32(0), i_alloca);
 
-    // 初始化所有元素为默认值
-    std::vector<midend::Value*> init_values(total_size, default_value);
+    // cond基本块
+    midend::BasicBlock* condBB =
+        builder.createBasicBlock(var_name + ".while.cond", current_func);
+    builder.createBr(condBB);
+
+    // loop基本块
+    midend::BasicBlock* loopBB =
+        builder.createBasicBlock(var_name + ".while.loop", current_func);
+    builder.setInsertPoint(loopBB);
+    midend::Value* single_idx = builder.createLoad(i_alloca);
+    std::vector<midend::Value*> indices;
+    indices.push_back(single_idx);
+    midend::Value* elem_ptr =
+        builder.createGEP(one_dim_array_type, array_alloca, indices);
+    // 默认填充0
+    midend::Value* fill_data;
+    if (symbol->data_type == DATA_INT)
+        fill_data = builder.getInt32(0);
+    else if (symbol->data_type == DATA_FLOAT)
+        fill_data = builder.getFloat(0.0);
+    else
+        fill_data = builder.getInt32(0);
+    builder.createStore(fill_data, elem_ptr);
+    builder.createStore(builder.createAdd(i_alloca, builder.getInt32(1)),
+                        i_alloca);
+    builder.createBr(condBB);
+
+    // merge基本块
+    midend::BasicBlock* mergeBB =
+        builder.createBasicBlock(var_name + ".while.merge", current_func);
+
+    // 循环转移
+    builder.setInsertPoint(condBB);
+    midend::Value* cond = builder.createICmpSLT(
+        i_alloca, top_bound, "lt." + std::to_string(var_idx++));
+    builder.createCondBr(cond, loopBB, mergeBB);
+
+    // 继续在merge块中插入代码
+    builder.setInsertPoint(mergeBB);
 
     // 处理初始化列表
+    std::unordered_map<int, midend::Value*> init_values;
     if (init_list) {
         int current_pos = 0;
         process_local_array_init_recursive(init_list, symbol, builder,
                                            local_vars, init_values, current_pos,
-                                           dims, 0);
+                                           0);
     }
 
     // 生成store指令，为每个元素赋值
-    for (int i = 0; i < total_size; i++) {
-        if (init_values[i]) {
-            // 将扁平索引转换为多维索引
-            std::vector<int> multi_indices = flat_to_multi_index(i, dims);
+    for (auto p : init_values) {
+        int flat_idx = p.first;
+        midend::Value* init_value = p.second;
 
-            // 创建GEP索引
-            std::vector<midend::Value*> gep_indices;
-            for (int idx : multi_indices) {
-                gep_indices.push_back(builder.getInt32(idx));
-            }
+        midend::Value* single_idx = builder.getInt32(flat_idx);
+        std::vector<midend::Value*> indices;
+        indices.push_back(single_idx);
+        midend::Value* elem_ptr =
+            builder.createGEP(one_dim_array_type, array_alloca, indices);
+        builder.createStore(init_value, elem_ptr);
 
-            // 获取元素指针并存储值
-            midend::Value* elem_ptr =
-                get_array_element_ptr(symbol, gep_indices, builder, local_vars);
-            builder.createStore(init_values[i], elem_ptr);
-        }
+        // // 将扁平索引转换为多维索引
+        // std::vector<int> multi_indices = flat_to_multi_index(i, dims);
+
+        // // 创建GEP索引
+        // std::vector<midend::Value*> gep_indices;
+        // for (int idx : multi_indices) {
+        //     gep_indices.push_back(builder.getInt32(idx));
+        // }
+
+        // // 获取元素指针并存储值
+        // midend::Value* elem_ptr =
+        //     get_array_element_ptr(symbol, gep_indices, builder, local_vars);
+        // builder.createStore(init_values[i], elem_ptr);
     }
 }
 
@@ -421,10 +484,6 @@ midend::Value* create_binary_op(midend::IRBuilder& builder, midend::Value* left,
                                     "ne." + std::to_string(var_idx++));
     } else
         return nullptr;
-}
-
-std::string get_symbol_name(SymbolPtr symbol) {
-    return std::string(symbol->name) + "." + std::to_string(symbol->id);
 }
 
 // 辅助函数：获取数组元素指针
@@ -491,6 +550,10 @@ midend::Value* translate_node(
             for (int i = 0; i < node->child_count; ++i) {
                 last_value = translate_node(node->children[i], builder,
                                             current_func, local_vars);
+                if (node->children[i]->node_type == NODE_BREAK_STMT ||
+                    node->children[i]->node_type == NODE_CONTINUE_STMT ||
+                    node->children[i]->node_type == NODE_RETURN_STMT)
+                    break;
             }
             return last_value;
         }
@@ -807,8 +870,8 @@ midend::Value* translate_node(
 
             if (node->child_count > 1) {
                 ASTNodePtr init_list = node->children[1];
-                initialize_array_elements(init_list, symbol, array_type,
-                                          builder, local_vars);
+                initialize_array_elements(init_list, symbol, array_alloca,
+                                          builder, current_func, local_vars);
             }
 
             return array_alloca;
@@ -984,7 +1047,8 @@ midend::Value* translate_node(
                 last_value = translate_node(node->children[i], builder,
                                             current_func, local_vars);
                 if (node->children[i]->node_type == NODE_BREAK_STMT ||
-                    node->children[i]->node_type == NODE_CONTINUE_STMT)
+                    node->children[i]->node_type == NODE_CONTINUE_STMT ||
+                    node->children[i]->node_type == NODE_RETURN_STMT)
                     break;
             }
             return last_value;

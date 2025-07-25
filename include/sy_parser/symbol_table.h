@@ -34,6 +34,7 @@ typedef struct {
 // Information about an array symbol
 typedef struct {
     int dimensions;
+    int elem_num;
     int* shape;  // An array representing the size of each dimension
 } ArrayInfo;
 
