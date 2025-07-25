@@ -1140,7 +1140,7 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
     translate_node(node->children[1], builder, func, func_local_vars);
 
     // 如果没有显式的return语句，添加一个
-    if (!entry_bb->getTerminator()) {
+    if (!builder.getInsertBlock()->getTerminator()) {
         if (return_type->isVoidType())
             builder.createRetVoid();
         else
