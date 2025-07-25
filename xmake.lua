@@ -19,122 +19,69 @@ else
     add_packages("midend")
 end
 
-target("bison_gen")
-    set_kind("phony")
-    
-    on_build(function (target)
+rule("yacc")
+    set_extensions(".y", ".yacc")
+    before_build_file(function (target, sourcefile, opt)
         import("lib.detect.find_tool")
         
-        local bison = find_tool("bison")
-        if not bison then
-            raise("bison not found, please install bison")
-        end
-
-        local script_dir = os.scriptdir()
-        local lydir = path.join(script_dir, "flex_yacc")
-        local srcdir = path.join(script_dir, "src")
-        local incdir = path.join(script_dir, "include")
-        
-        local yacc_input = path.join(lydir, "sysy_yacc.y")
-        local yacc_output = path.join(srcdir, "sy_parser/y.tab.c")
-        local yacc_header = path.join(incdir, "sy_parser/y.tab.h")
-        
-        if not os.isfile(yacc_output) or os.mtime(yacc_input) > os.mtime(yacc_output) then
-            print("Generating parser with bison...")
+        local bison = assert(find_tool("bison"), "bison not found!")
+        local srcdir = path.join(target:scriptdir(), "src/sy_parser")
+        local incdir = path.join(target:scriptdir(), "include/sy_parser")
+        local target_c = path.join(srcdir, "y.tab.c")
+        local target_h = path.join(incdir, "y.tab.h")
+        local sourcefile_mtime = os.mtime(sourcefile) or 0
+        local target_c_mtime = os.mtime(target_c) or 0
+        local target_h_mtime = os.mtime(target_h) or 0
+        if sourcefile_mtime > target_c_mtime or sourcefile_mtime > target_h_mtime or 
+           target_c_mtime == 0 or target_h_mtime == 0 then
+            os.mkdir(srcdir)
             os.mkdir(incdir)
-            os.execv(bison.program, {"-d", "-o", yacc_output, yacc_input})
-            
-            local temp_header = path.join(srcdir, "sy_parser/y.tab.h")
+            cprint("${color.build.object}generating.yacc %s", sourcefile)
+            os.vrunv(bison.program, {"-d", "-o", target_c, sourcefile})
+            local temp_header = path.join(srcdir, "y.tab.h")
             if os.isfile(temp_header) then
-                os.mv(temp_header, yacc_header)
+                os.mv(temp_header, target_h)
             end
         end
     end)
+rule_end()
 
-target("flex_gen")
-    set_kind("phony")
-    add_deps("bison_gen")
-    
-    on_build(function (target)
+rule("lex")
+    set_extensions(".l", ".lex")
+    before_build_file(function (target, sourcefile, opt)
         import("lib.detect.find_tool")
-        
-        local flex = find_tool("flex")
-        if not flex then
-            raise("flex not found, please install flex")
-        end
-
-        local script_dir = os.scriptdir()
-        local lydir = path.join(script_dir, "flex_yacc")
-        local srcdir = path.join(script_dir, "src")
-
-        local flex_input = path.join(lydir, "sysy_flex.l")
-        local flex_output = path.join(srcdir, "sy_parser/lex.yy.c")
-        
-        if not os.isfile(flex_output) or os.mtime(flex_input) > os.mtime(flex_output) then
-            print("Generating lexer with flex...")
-            os.execv(flex.program, {"-o", flex_output, flex_input})
+        local flex = assert(find_tool("flex"), "flex not found!")
+        local srcdir = path.join(target:scriptdir(), "src/sy_parser")
+        local target_c = path.join(srcdir, "lex.yy.c")
+        local sourcefile_mtime = os.mtime(sourcefile) or 0
+        local target_c_mtime = os.mtime(target_c) or 0
+        local yacc_header = path.join(target:scriptdir(), "include/sy_parser/y.tab.h")
+        local yacc_header_mtime = os.mtime(yacc_header) or 0
+        if sourcefile_mtime > target_c_mtime or yacc_header_mtime > target_c_mtime or 
+           target_c_mtime == 0 then
+            os.mkdir(srcdir)
+            cprint("${color.build.object}generating.lex %s", sourcefile)
+            os.vrunv(flex.program, {"-o", target_c, sourcefile})
         end
     end)
+rule_end()
 
 target("frontend")
     set_kind("static")
     set_languages("c11", "c++17")
-    
-    add_deps("flex_gen")
+    add_rules("yacc", "lex")
     
     add_files(
         "src/sy_parser/utils.c",
         "src/sy_parser/AST.c",
         "src/sy_parser/symbol_table.c",
         "src/runtime_lib_def.cpp",
-        "src/ir_gen.cpp"
+        "src/ir_gen.cpp",
+        "flex_yacc/sysy_yacc.y",
+        "flex_yacc/sysy_flex.l",
+        "src/sy_parser/y.tab.c",
+        "src/sy_parser/lex.yy.c"
     )
-    
-    on_config(function (target)
-        local script_dir = os.scriptdir()
-        local lydir = path.join(script_dir, "flex_yacc")
-        local srcdir = path.join(script_dir, "src")
-        local incdir = path.join(script_dir, "include")
-        
-        local yacc_output = path.join(srcdir, "sy_parser/y.tab.c")
-        local flex_output = path.join(srcdir, "sy_parser/lex.yy.c")
-        
-        if not os.isfile(yacc_output) or not os.isfile(flex_output) then
-            print("Pre-generating parser files...")
-            
-            import("lib.detect.find_tool")
-            
-            if not os.isfile(yacc_output) then
-                local bison = find_tool("bison")
-                if bison then
-                    local yacc_input = path.join(lydir, "sysy_yacc.y")
-                    local yacc_header = path.join(incdir, "sy_parser/y.tab.h")
-                    
-                    os.mkdir(incdir)
-                    os.execv(bison.program, {"-d", "-o", yacc_output, yacc_input})
-                    
-                    local temp_header = path.join(srcdir, "sy_parser/y.tab.h")
-                    if os.isfile(temp_header) then
-                        os.mv(temp_header, yacc_header)
-                    end
-                    print("Generated parser files")
-                end
-            end
-            
-            if not os.isfile(flex_output) then
-                local flex = find_tool("flex")
-                if flex then
-                    local flex_input = path.join(lydir, "sysy_flex.l")
-                    os.execv(flex.program, {"-o", flex_output, flex_input})
-                    print("Generated lexer files")
-                end
-            end
-            
-            target:add("files", yacc_output, flex_output)
-        else
-            target:add("files", yacc_output, flex_output)
-        end
-    end)
     
     add_includedirs("include", {public = true})
     add_includedirs("include/sy_parser", {public = true})
@@ -215,9 +162,9 @@ task("clean")
         
         -- Generated files to clean
         local generated_files = {
-            path.join(script_dir, "src", "sy_parser/lex.yy.c"),
-            path.join(script_dir, "src", "sy_parser/y.tab.c"),
-            path.join(script_dir, "include", "sy_parser/y.tab.h")
+            path.join(script_dir, "src/sy_parser/lex.yy.c"),
+            path.join(script_dir, "src/sy_parser/y.tab.c"),
+            path.join(script_dir, "include/sy_parser/y.tab.h")
         }
         
         -- Build directory
