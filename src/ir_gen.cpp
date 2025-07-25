@@ -1,6 +1,5 @@
 #include "ir_gen.h"
 
-#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -501,7 +500,22 @@ midend::Value* translate_node(
         }
 
         case NODE_VAR:
-        case NODE_CONST_VAR:
+        case NODE_CONST_VAR: {
+            SymbolPtr symbol = node->data.symb_ptr;
+            if (node->data_type != SYMB_DATA && !symbol) return nullptr;
+
+            // 从局部变量映射中查找
+            auto it = local_vars.find(symbol->id);
+            if (it != local_vars.end())
+                return builder.createLoad(it->second,
+                                          std::to_string(var_idx++));
+            // 从全局变量映射中查找
+            auto global_it = global_var_tab.find(symbol->id);
+            if (global_it != global_var_tab.end())
+                return builder.createLoad(global_it->second,
+                                          std::to_string(var_idx++));
+        }
+
         case NODE_ARRAY:
         case NODE_CONST_ARRAY: {
             // 变量节点
@@ -510,35 +524,10 @@ midend::Value* translate_node(
 
             // 从局部变量映射中查找
             auto it = local_vars.find(symbol->id);
-            if (it != local_vars.end()) {
-                midend::Value* value = it->second;
-                midend::Type* type = value->getType();
-                if (type->isPointerType()) {
-                    midend::Type* element_type =
-                        static_cast<midend::PointerType*>(type)
-                            ->getElementType();
-                    if (element_type->isArrayType()) {
-                        return value;
-                    } else {
-                        return builder.createLoad(value,
-                                                  std::to_string(var_idx++));
-                    }
-                } else {
-                    return value;
-                }
-            }
-
+            if (it != local_vars.end()) return it->second;
             // 从全局变量映射中查找
             auto global_it = global_var_tab.find(symbol->id);
-            if (global_it != global_var_tab.end()) {
-                midend::GlobalVariable* global_var = global_it->second;
-                if (global_var->getValueType()->isArrayType()) {
-                    return global_var;
-                } else {
-                    return builder.createLoad(global_var,
-                                              std::to_string(var_idx++));
-                }
-            }
+            if (global_it != global_var_tab.end()) return global_it->second;
 
             return nullptr;
         }
@@ -722,21 +711,16 @@ midend::Value* translate_node(
                 SymbolPtr symbol = left_node->data.symb_ptr;
                 if (!symbol) return nullptr;
 
-                std::string var_name = get_symbol_name(symbol);
-
-                // 检查是否已有局部变量
+                // 从局部变量映射中查找
                 auto it = local_vars.find(symbol->id);
                 if (it != local_vars.end()) {
-                    // 更新现有变量
                     builder.createStore(right_value, it->second);
                     return right_value;
-                } else {
-                    // 创建新的局部变量
-                    midend::Type* var_type = right_value->getType();
-                    midend::Value* alloca =
-                        builder.createAlloca(var_type, nullptr, var_name);
-                    builder.createStore(right_value, alloca);
-                    local_vars[symbol->id] = alloca;
+                }
+                // 从全局变量映射中查找
+                auto global_it = global_var_tab.find(symbol->id);
+                if (global_it != global_var_tab.end()) {
+                    builder.createStore(right_value, global_it->second);
                     return right_value;
                 }
             } else if (left_node->node_type == NODE_ARRAY_ACCESS) {

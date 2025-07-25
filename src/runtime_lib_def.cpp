@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 #include "IR/Function.h"
-#include "IR/IRBuilder.h"
 #include "IR/Module.h"
 #include "IR/Type.h"
 
