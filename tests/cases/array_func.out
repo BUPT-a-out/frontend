@@ -128,27 +128,27 @@ ID    Name                 Type            Data Type  Scope      Shape
 @data.26 = external global [10000 x i32] [i32 0, i32 1, i32 2, i32 3, i32 4]
 @data2.27 = external global [10000 x [5 x i32]] [[5 x i32] [i32 1], [5 x i32] [i32 2, i32 3]]
 
-define i32 @sum(i32* %a.29, i32* %arr.30, [5 x i32]* %arr2.31) {
-entry:
-  %0 = getelementptr i32*, i32* %a.29, i32 0
+define i32 @sum(i32* %param.a.29, i32* %param.arr.30, [5 x i32]* %param.arr2.31) {
+sum.entry:
+  %0 = getelementptr i32*, i32* %param.a.29, i32 0
   %1 = load i32, i32* %0
-  %2 = getelementptr i32*, i32* %arr.30, i32 0
+  %2 = getelementptr i32*, i32* %param.arr.30, i32 0
   %3 = load i32, i32* %2
   %add.0 = add i32 %1, %3
-  %4 = getelementptr i32*, i32* %arr.30, i32 1
+  %4 = getelementptr i32*, i32* %param.arr.30, i32 1
   %5 = load i32, i32* %4
   %add.1 = add i32 %add.0, %5
-  %6 = getelementptr [5 x i32]*, [5 x i32]* %arr2.31, i32 0, i32 0
+  %6 = getelementptr [5 x i32]*, [5 x i32]* %param.arr2.31, i32 0, i32 0
   %7 = load i32, i32* %6
   %add.2 = add i32 %add.1, %7
-  %8 = getelementptr [5 x i32]*, [5 x i32]* %arr2.31, i32 0, i32 1
+  %8 = getelementptr [5 x i32]*, [5 x i32]* %param.arr2.31, i32 0, i32 1
   %9 = load i32, i32* %8
   %add.3 = add i32 %add.2, %9
   ret i32 %add.3
 }
 
 define i32 @main() {
-entry:
+main.entry:
   %a.33 = alloca i32
   store i32 5, i32* %a.33
   %b.34 = alloca [10 x i32]

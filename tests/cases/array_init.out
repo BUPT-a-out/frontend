@@ -119,7 +119,7 @@ ID    Name                 Type            Data Type  Scope      Shape
 ; ModuleID = 'main'
 
 define i32 @main() {
-entry:
+main.entry:
   %a.25 = alloca [4 x [2 x i32]]
   %0 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %a.25, i32 0, i32 0
   store i32 0, i32* %0

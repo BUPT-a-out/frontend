@@ -57,7 +57,7 @@ ID    Name                 Type            Data Type  Scope      Shape
 ; ModuleID = 'main'
 
 define i32 @main() {
-entry:
+main.entry:
   br i1 1, label %if.0.then, label %if.0.else
 if.0.then:
   br i1 1, label %if.1.then, label %if.1.else

@@ -45,7 +45,7 @@ ID    Name                 Type            Data Type  Scope      Shape
 ; ModuleID = 'main'
 
 define i32 @main() {
-entry:
+main.entry:
   %a.25 = alloca i32
   store i32 5, i32* %a.25
   %0 = load i32, i32* %a.25

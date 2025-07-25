@@ -804,7 +804,9 @@ midend::Value* translate_node(
             SymbolPtr symbol = node->data.symb_ptr;
             if (node->data_type != SYMB_DATA || !symbol) return nullptr;
 
-            if (symbol->symbol_type != SYMB_ARRAY) return nullptr;
+            if (symbol->symbol_type != SYMB_ARRAY &&
+                symbol->symbol_type != SYMB_CONST_ARRAY)
+                return nullptr;
 
             // 创建数组类型
             midend::Type* array_type =
@@ -892,18 +894,24 @@ midend::Value* translate_node(
                            local_vars);
             midend::BasicBlock* block_after_else = builder.getInsertBlock();
 
+            // 判断是否需要merge块
+            bool then_need_merge = !block_after_then->getTerminator() &&
+                                   !in_break_continue_pos(block_after_then);
+            bool else_need_merge = !block_after_else->getTerminator() &&
+                                   !in_break_continue_pos(block_after_else);
+
             // merge基本块
-            midend::BasicBlock* mergeBB = builder.createBasicBlock(
-                "if." + current_block_id + ".merge", current_func);
+            midend::BasicBlock* mergeBB = nullptr;
+            if (then_need_merge || else_need_merge)
+                mergeBB = builder.createBasicBlock(
+                    "if." + current_block_id + ".merge", current_func);
 
             // 如果then、else块没有终结指令，添加到merge块的跳转
-            if (!block_after_then->getTerminator() &&
-                !in_break_continue_pos(block_after_then)) {
+            if (then_need_merge) {
                 builder.setInsertPoint(block_after_then);
                 builder.createBr(mergeBB);
             }
-            if (!block_after_else->getTerminator() &&
-                !in_break_continue_pos(block_after_else)) {
+            if (else_need_merge) {
                 builder.setInsertPoint(block_after_else);
                 builder.createBr(mergeBB);
             }
@@ -913,7 +921,8 @@ midend::Value* translate_node(
             builder.createCondBr(cond, thenBB, elseBB);
 
             // 继续在merge块生成代码
-            builder.setInsertPoint(mergeBB);
+            if (then_need_merge || else_need_merge)
+                builder.setInsertPoint(mergeBB);
 
             return nullptr;
         }
@@ -1009,7 +1018,7 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
 
     // 从符号表中获取返回类型和函数名
     midend::Type* return_type = get_ir_type(ctx, func_sym->data_type);
-    std::string func_name = (func_sym->name) ? func_sym->name : "unknown_func";
+    std::string func_name = (func_sym->name) ? func_sym->name : "unknown.func";
 
     // 函数参数节点（函数参数作为局部变量）
     ASTNodePtr param_node = node->children[0];
@@ -1040,7 +1049,7 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
         }
 
         param_types.push_back(param_type);
-        param_names.push_back(get_symbol_name(param_sym));
+        param_names.push_back("param." + get_symbol_name(param_sym));
     }
 
     // 创建函数类型
@@ -1061,9 +1070,16 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
     std::unordered_map<int, midend::Value*> func_local_vars;
     for (int i = 0; i < param_node->child_count; i++) {
         param_sym = param_node->children[i]->data.symb_ptr;
-        midend::Value* param_value = func->getArg(i);
+        midend::Value* param;
+        if (param_sym->symbol_type == SYMB_VAR) {
+            param = def_var(builder, param_sym, func_local_vars);
+            midend::Value* param_value = func->getArg(i);
+            builder.createStore(param_value, param);
+        } else {
+            param = func->getArg(i);
+        }
         function_param_symbols.insert(param_sym->id);
-        func_local_vars[param_sym->id] = param_value;
+        func_local_vars[param_sym->id] = param;
     }
 
     // 处理函数体

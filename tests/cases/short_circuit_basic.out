@@ -75,7 +75,7 @@ ID    Name                 Type            Data Type  Scope      Shape
 ; ModuleID = 'main'
 
 define i32 @main() {
-entry:
+main.entry:
   %a.25 = alloca i32
   store i32 0, i32* %a.25
   %b.26 = alloca i32
@@ -90,7 +90,7 @@ and.1.rhs:
   %tobool.3 = icmp ne i32 %2, 0
   br label %and.1.merge
 and.1.merge:
-  %and.1.result = phi i1 [ 0, %entry ], [ %tobool.3, %and.1.rhs ]
+  %and.1.result = phi i1 [ 0, %main.entry ], [ %tobool.3, %and.1.rhs ]
   br i1 %and.1.result, label %if.0.then, label %if.0.merge
 if.0.then:
   store i32 1, i32* %result.27
