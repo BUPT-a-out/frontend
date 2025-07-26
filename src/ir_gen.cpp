@@ -38,10 +38,16 @@ std::unordered_map<int, midend::Function*> func_tab;
 std::unordered_map<int, midend::GlobalVariable*> global_var_tab;
 std::unordered_set<int> function_param_symbols;
 
+// 控制流break、continue填充
+// 基本块及其所在基本块编号
+typedef struct {
+    midend::BasicBlock* block;
+    int block_idx;
+} BlockDepthPair;
 // 控制流break填充
-std::vector<midend::BasicBlock*> break_pos;
+std::vector<BlockDepthPair> break_pos;
 // 控制流continue填充
-std::vector<midend::BasicBlock*> continue_pos;
+std::vector<BlockDepthPair> continue_pos;
 
 // IR变量编号
 int var_idx;
@@ -60,9 +66,11 @@ midend::Value* translate_node(
 
 // 辅助函数：判断基本块是否在break或continue填充向量中
 bool in_break_continue_pos(midend::BasicBlock* block) {
-    return find(break_pos.begin(), break_pos.end(), block) != break_pos.end() ||
-           find(continue_pos.begin(), continue_pos.end(), block) !=
-               continue_pos.end();
+    for (auto pair : break_pos)
+        if (pair.block == block) return true;
+    for (auto pair : continue_pos)
+        if (pair.block == block) return true;
+    return false;
 }
 
 // 获取变量在IR中的名称
@@ -975,7 +983,8 @@ midend::Value* translate_node(
         case NODE_WHILE_STMT: {
             // while语句处理
             if (node->child_count < 2) return nullptr;
-            std::string current_block_id = std::to_string(block_idx++);
+            int current_block_id_int = block_idx++;
+            std::string current_block_id = std::to_string(current_block_id_int);
 
             // 条件判断块
             midend::BasicBlock* condBB = builder.createBasicBlock(
@@ -1004,18 +1013,23 @@ midend::Value* translate_node(
             midend::BasicBlock* mergeBB = builder.createBasicBlock(
                 "while." + current_block_id + ".merge", current_func);
 
+            // block_idx单调递增，新进入的break_block对应的一定较大
             // break指令
-            for (const auto& break_block : break_pos) {
-                builder.setInsertPoint(break_block);
+            while (!break_pos.empty()) {
+                BlockDepthPair pair = break_pos.back();
+                if (pair.block_idx < current_block_id_int) break;
+                builder.setInsertPoint(pair.block);
                 builder.createBr(mergeBB);
+                break_pos.pop_back();
             }
-            break_pos.clear();
             // continue指令
-            for (const auto& continue_block : continue_pos) {
-                builder.setInsertPoint(continue_block);
+            while (!continue_pos.empty()) {
+                BlockDepthPair pair = continue_pos.back();
+                if (pair.block_idx < current_block_id_int) break;
+                builder.setInsertPoint(pair.block);
                 builder.createBr(condBB);
+                continue_pos.pop_back();
             }
-            continue_pos.clear();
 
             // 跳转指令
             builder.setInsertPoint(block_after_cond);
@@ -1028,12 +1042,12 @@ midend::Value* translate_node(
         }
 
         case NODE_BREAK_STMT: {
-            break_pos.push_back(builder.getInsertBlock());
+            break_pos.push_back({builder.getInsertBlock(), block_idx - 1});
             return nullptr;
         }
 
         case NODE_CONTINUE_STMT: {
-            continue_pos.push_back(builder.getInsertBlock());
+            continue_pos.push_back({builder.getInsertBlock(), block_idx - 1});
             return nullptr;
         }
 
