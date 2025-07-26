@@ -65,12 +65,12 @@ typedef union {
 } NodeData;
 
 typedef enum {
-    NO_DATA,
-    SYMB_DATA,
-    INT_DATA,
-    FLOAT_DATA,
-    STRING_DATA,
-    TYPE_DATA,
+    NODEDATA_EMPTY,
+    NODEDATA_SYMB,
+    NODEDATA_INT,
+    NODEDATA_FLOAT,
+    NODEDATA_STRING,
+    NODEDATA_TYPE,
 
     // Like HOLD_NODETYPE
     HOLD_NODEDATATYPE,
@@ -92,7 +92,7 @@ typedef struct ASTNode {
 
 // - AST Create/Delete Functions -
 
-// Create AST node and set its data_type to NO_DATA
+// Create AST node and set its data_type to NODEDATA_EMPTY
 ASTNodePtr create_ast_node(NodeType type, const char* name, int lineno,
                            int num_children, ...);
 // Delete AST node and its children recursively

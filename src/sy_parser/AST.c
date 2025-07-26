@@ -17,7 +17,7 @@ ASTNodePtr create_ast_node(NodeType type, const char* name, int lineno,
     node->node_type = type;
     node->name = my_strdup(name);
     node->lineno = lineno;
-    node->data_type = NO_DATA;
+    node->data_type = NODEDATA_EMPTY;
     node->child_count = num_children;
     node->child_capacity = num_children > 0 ? num_children : 4;
     node->children =
@@ -165,20 +165,20 @@ void print_ast(ASTNodePtr node, int level) {
         printf(": %s", node->name);
     }
     switch (node->data_type) {
-        case SYMB_DATA:
+        case NODEDATA_SYMB:
             printf(" (sym: %s, id: %d)", node->data.symb_ptr->name,
                    node->data.symb_ptr->id);
             break;
-        case INT_DATA:
+        case NODEDATA_INT:
             printf(" (int value: %d)", node->data.direct_int);
             break;
-        case FLOAT_DATA:
+        case NODEDATA_FLOAT:
             printf(" (float value: %f)", node->data.direct_float);
             break;
-        case STRING_DATA:
+        case NODEDATA_STRING:
             printf(" (string: %s)", node->data.direct_str);
             break;
-        case TYPE_DATA:
+        case NODEDATA_TYPE:
             printf(" (type: %s)", data_type_to_string(node->data.data_type));
             break;
         default:
