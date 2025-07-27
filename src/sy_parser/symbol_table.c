@@ -12,6 +12,9 @@ static SymbolTable permanent_table;
 // Scope Stack instance
 static ScopeStack scope_stack;
 
+// Function scope (in which function)
+static SymbolPtr func_scope;
+
 void init_symbol_management() {
     permanent_table.symb_count = 0;
     permanent_table.symb_capacity = 64;
@@ -21,6 +24,9 @@ void init_symbol_management() {
     scope_stack.top = -1;
     scope_stack.capacity = 16;
     scope_stack.scopes = (Scope**)malloc(scope_stack.capacity * sizeof(Scope*));
+
+    // Init function scope
+    func_scope = NULL;
 
     // Global scope
     enter_scope();
@@ -41,6 +47,23 @@ void free_symbol_management() {
         exit_scope();
     }
     free(scope_stack.scopes);
+}
+
+void add_symbol_to_symbol_table(SymbolPtr symbol) {
+    if (permanent_table.symb_count >= permanent_table.symb_capacity) {
+        permanent_table.symb_capacity *= 2;
+        permanent_table.symbols = (Symbol**)realloc(
+            permanent_table.symbols,
+            permanent_table.symb_capacity * sizeof(SymbolPtr));
+    }
+    permanent_table.symbols[permanent_table.symb_count++] = symbol;
+}
+
+SymbolPtr get_symbol_by_id(int id) {
+    if (id >= 0 && id < permanent_table.symb_count) {
+        return permanent_table.symbols[id];
+    }
+    return NULL;
 }
 
 Scope* create_scope() {
@@ -82,6 +105,40 @@ void exit_scope() {
     scope_stack.top--;
 }
 
+void add_symbol_to_current_scope(SymbolPtr symbol) {
+    const char* name = symbol->name;
+    Scope* current_scope = scope_stack.scopes[scope_stack.top];
+    unsigned long index = my_str_hash(name) % current_scope->capacity;
+    ScopeEntry* new_entry = (ScopeEntry*)malloc(sizeof(ScopeEntry));
+    new_entry->name = my_strdup(name);
+    new_entry->symbol_id = symbol->id;
+    new_entry->next = current_scope->entries[index];
+    current_scope->entries[index] = new_entry;
+}
+
+void enter_function(SymbolPtr func_symb) {
+    if (func_symb->symbol_type != SYMB_FUNCTION) return;
+    func_scope = func_symb;
+}
+
+void exit_function() { func_scope = NULL; }
+
+void add_symbol_to_function_vars(SymbolPtr symbol) {
+    FuncInfo func_scope_info = func_scope->attributes.func_info;
+    if (!func_scope_info.var_capacity) {
+        func_scope_info.var_capacity = 2;
+        func_scope_info.vars = (Symbol**)malloc(2 * sizeof(SymbolPtr));
+    }
+    if (func_scope_info.var_count >= func_scope_info.var_capacity) {
+        func_scope_info.var_capacity *= 2;
+        func_scope_info.vars =
+            (Symbol**)realloc(func_scope_info.vars,
+                              func_scope_info.var_capacity * sizeof(SymbolPtr));
+    }
+    func_scope_info.vars[func_scope_info.var_count++] = symbol;
+    func_scope->attributes.func_info = func_scope_info;
+}
+
 int get_current_scope_level() {
     if (scope_stack.top < 0) return -1;
     return scope_stack.scopes[scope_stack.top]->level;
@@ -115,45 +172,37 @@ SymbolPtr define_symbol(const char* name, SymbolType sym_type,
         exit(EXIT_FAILURE);
         return NULL;
     }
-
-    // Add to permanent table
-    if (permanent_table.symb_count >= permanent_table.symb_capacity) {
-        permanent_table.symb_capacity *= 2;
-        permanent_table.symbols = (Symbol**)realloc(
-            permanent_table.symbols,
-            permanent_table.symb_capacity * sizeof(SymbolPtr));
-    }
-
     SymbolPtr new_sym = (SymbolPtr)malloc(sizeof(Symbol));
     new_sym->id = permanent_table.symb_count;
     new_sym->name = my_strdup(name);
+    new_sym->function = func_scope;
     new_sym->symbol_type = sym_type;
     new_sym->data_type = data_type;
     new_sym->lineno = lineno;
     new_sym->scope_level = get_current_scope_level();
-    permanent_table.symbols[permanent_table.symb_count] = new_sym;
 
     // Initialize attributes union
     if (sym_type == SYMB_FUNCTION) {
-        new_sym->attributes.func_info.param_count = 0;
-        new_sym->attributes.func_info.call_count = 0;
-        new_sym->attributes.func_info.params = NULL;
+        FuncInfo func_info;
+        func_info.params = NULL;
+        func_info.vars = NULL;
+        func_info.param_count = 0;
+        func_info.var_count = 0;
+        func_info.var_capacity = 0;
+        func_info.call_count = 0;
+        new_sym->attributes.func_info = func_info;
     } else if (sym_type == SYMB_ARRAY || sym_type == SYMB_CONST_ARRAY) {
-        new_sym->attributes.array_info.dimensions = 0;
-        new_sym->attributes.array_info.elem_num = 1;
-        new_sym->attributes.array_info.shape = NULL;
+        ArrayInfo array_info;
+        array_info.shape = NULL;
+        array_info.dimensions = 0;
+        array_info.elem_num = 1;
+        new_sym->attributes.array_info = array_info;
     }
 
-    // Add to current scope's hash map
-    Scope* current_scope = scope_stack.scopes[scope_stack.top];
-    unsigned long index = my_str_hash(name) % current_scope->capacity;
-    ScopeEntry* new_entry = (ScopeEntry*)malloc(sizeof(ScopeEntry));
-    new_entry->name = my_strdup(name);
-    new_entry->symbol_id = new_sym->id;
-    new_entry->next = current_scope->entries[index];
-    current_scope->entries[index] = new_entry;
-
-    permanent_table.symb_count++;
+    // Add symbol to several position
+    add_symbol_to_symbol_table(new_sym);
+    add_symbol_to_current_scope(new_sym);
+    if (func_scope) add_symbol_to_function_vars(new_sym);
 
     return new_sym;
 }
@@ -165,13 +214,6 @@ SymbolPtr lookup_symbol(const char* name) {
         if (symbol) {
             return symbol;
         }
-    }
-    return NULL;
-}
-
-SymbolPtr get_symbol_by_id(int id) {
-    if (id >= 0 && id < permanent_table.symb_count) {
-        return permanent_table.symbols[id];
     }
     return NULL;
 }
@@ -212,17 +254,21 @@ const char* data_type_to_string(DataType type) {
 
 void print_symbol_table() {
     printf("\n--- Permanent Symbol Table ---\n");
-    printf("%-5s %-20s %-15s %-10s %-10s %-10s\n", "ID", "Name", "Type",
-           "Data Type", "Scope", "Shape");
+    printf("%-5s %-20s %-15s %-10s %-20s %-10s\n", "ID", "Name", "Type",
+           "Data Type", "Function", "Shape");
     printf(
         "----------------------------------------------------------------------"
-        "-----\n");
+        "---------------\n");
     SymbolPtr sym_ptr;
     for (int i = 0; i < permanent_table.symb_count; i++) {
         sym_ptr = permanent_table.symbols[i];
-        printf("%-5d %-20s %-15s %-10s %-10d", sym_ptr->id, sym_ptr->name,
+        printf("%-5d %-20s %-15s %-10s", sym_ptr->id, sym_ptr->name,
                symbol_type_to_string(sym_ptr->symbol_type),
-               data_type_to_string(sym_ptr->data_type), sym_ptr->scope_level);
+               data_type_to_string(sym_ptr->data_type));
+        if (sym_ptr->function)
+            printf(" %-20s", sym_ptr->function->name);
+        else
+            printf(" %-20s", "N/A");
         if (sym_ptr->symbol_type == SYMB_ARRAY ||
             sym_ptr->symbol_type == SYMB_CONST_ARRAY) {
             for (int j = 0; j < sym_ptr->attributes.array_info.dimensions; j++)
@@ -234,5 +280,5 @@ void print_symbol_table() {
     }
     printf(
         "----------------------------------------------------------------------"
-        "-----\n\n");
+        "---------------\n\n");
 }

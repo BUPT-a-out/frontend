@@ -33,22 +33,26 @@ typedef struct {
 
 // Information about an array symbol
 typedef struct {
+    int* shape;  // An array representing the size of each dimension
     int dimensions;
     int elem_num;
-    int* shape;  // An array representing the size of each dimension
 } ArrayInfo;
 
 // Information about a function symbol
 typedef struct {
-    int param_count;
-    int call_count;
     struct Symbol** params;  // Array of pointers to parameter symbols
+    struct Symbol** vars;
+    int param_count;
+    int var_count;
+    int var_capacity;
+    int call_count;
 } FuncInfo;
 
 // Symbol structure
 typedef struct Symbol {
     int id;
     char* name;
+    struct Symbol* function;  // The symbol belong to
     SymbolType symbol_type;
     DataType data_type;
 
@@ -109,6 +113,8 @@ void free_symbol_management();
 
 void enter_scope();
 void exit_scope();
+void enter_function(SymbolPtr func_symb);
+void exit_function();
 int get_current_scope_level();
 
 // Symbol Definition (add symbol to both symbol table and scope table)

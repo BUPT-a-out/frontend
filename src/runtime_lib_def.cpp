@@ -20,6 +20,7 @@ static std::unordered_map<std::string, SymbolPtr> func_name_to_ptr;
 
 void add_runtime_lib_to_symbol_table() {
     SymbolPtr sym;
+    SymbolPtr param;
 
     // 1. int getint()
     sym = define_symbol("getint", SYMB_FUNCTION, DATA_INT, 0);
@@ -44,7 +45,8 @@ void add_runtime_lib_to_symbol_table() {
     enter_scope();
     sym->attributes.func_info.param_count = 1;
     sym->attributes.func_info.params = (SymbolPtr*)malloc(sizeof(SymbolPtr));
-    SymbolPtr param = define_symbol("array", SYMB_ARRAY, DATA_INT, 0);
+    param = define_symbol("array", SYMB_ARRAY, DATA_INT, 0);
+    param->function = sym;
     param->attributes.array_info.dimensions = 1;
     param->attributes.array_info.shape = (int*)malloc(sizeof(int));  // Î¬¶ÈÎ´Öª
     param->attributes.array_info.shape[0] = 0;
@@ -58,6 +60,7 @@ void add_runtime_lib_to_symbol_table() {
     sym->attributes.func_info.param_count = 1;
     sym->attributes.func_info.params = (SymbolPtr*)malloc(sizeof(SymbolPtr));
     param = define_symbol("array", SYMB_ARRAY, DATA_FLOAT, 0);
+    param->function = sym;
     param->attributes.array_info.dimensions = 1;
     param->attributes.array_info.shape = (int*)malloc(sizeof(int));
     param->attributes.array_info.shape[0] = 0;
@@ -71,6 +74,7 @@ void add_runtime_lib_to_symbol_table() {
     sym->attributes.func_info.param_count = 1;
     sym->attributes.func_info.params = (SymbolPtr*)malloc(sizeof(SymbolPtr));
     param = define_symbol("value", SYMB_VAR, DATA_INT, 0);
+    param->function = sym;
     sym->attributes.func_info.params[0] = param;
     exit_scope();
     func_name_to_ptr["putint"] = sym;
@@ -81,6 +85,7 @@ void add_runtime_lib_to_symbol_table() {
     sym->attributes.func_info.param_count = 1;
     sym->attributes.func_info.params = (SymbolPtr*)malloc(sizeof(SymbolPtr));
     param = define_symbol("value", SYMB_VAR, DATA_INT, 0);
+    param->function = sym;
     sym->attributes.func_info.params[0] = param;
     exit_scope();
     func_name_to_ptr["putch"] = sym;
@@ -91,6 +96,7 @@ void add_runtime_lib_to_symbol_table() {
     sym->attributes.func_info.param_count = 1;
     sym->attributes.func_info.params = (SymbolPtr*)malloc(sizeof(SymbolPtr));
     param = define_symbol("value", SYMB_VAR, DATA_FLOAT, 0);
+    param->function = sym;
     sym->attributes.func_info.params[0] = param;
     exit_scope();
     func_name_to_ptr["putfloat"] = sym;
@@ -102,8 +108,10 @@ void add_runtime_lib_to_symbol_table() {
     sym->attributes.func_info.params =
         (SymbolPtr*)malloc(2 * sizeof(SymbolPtr));
     param = define_symbol("len", SYMB_VAR, DATA_INT, 0);
+    param->function = sym;
     sym->attributes.func_info.params[0] = param;
     param = define_symbol("array", SYMB_ARRAY, DATA_INT, 0);
+    param->function = sym;
     param->attributes.array_info.dimensions = 1;
     param->attributes.array_info.shape = (int*)malloc(sizeof(int));
     param->attributes.array_info.shape[0] = 0;
@@ -118,8 +126,10 @@ void add_runtime_lib_to_symbol_table() {
     sym->attributes.func_info.params =
         (SymbolPtr*)malloc(2 * sizeof(SymbolPtr));
     param = define_symbol("len", SYMB_VAR, DATA_INT, 0);
+    param->function = sym;
     sym->attributes.func_info.params[0] = param;
     param = define_symbol("array", SYMB_ARRAY, DATA_FLOAT, 0);
+    param->function = sym;
     param->attributes.array_info.dimensions = 1;
     param->attributes.array_info.shape = (int*)malloc(sizeof(int));
     param->attributes.array_info.shape[0] = 0;
@@ -134,8 +144,10 @@ void add_runtime_lib_to_symbol_table() {
     sym->attributes.func_info.params =
         (SymbolPtr*)malloc(2 * sizeof(SymbolPtr));
     param = define_symbol("format_string", SYMB_VAR, DATA_CHAR, 0);
+    param->function = sym;
     sym->attributes.func_info.params[0] = param;
     param = define_symbol("value", SYMB_VAR, DATA_INT, 0);
+    param->function = sym;
     sym->attributes.func_info.params[1] = param;
     exit_scope();
     func_name_to_ptr["putf"] = sym;

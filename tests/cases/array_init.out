@@ -90,41 +90,41 @@ Parsing completed successfully.
 |   |   |   |   +-- CONST (int value: 0)
 
 --- Permanent Symbol Table ---
-ID    Name                 Type            Data Type  Scope      Shape     
----------------------------------------------------------------------------
-0     getint               function        int        1          N/A       
-1     getch                function        int        1          N/A       
-2     getfloat             function        float      1          N/A       
-3     getarray             function        int        1          N/A       
-4     array                array           int        2          0
-5     getfarray            function        int        1          N/A       
-6     array                array           float      2          0
-7     putint               function        void       1          N/A       
-8     value                var             int        2          N/A       
-9     putch                function        void       1          N/A       
-10    value                var             int        2          N/A       
-11    putfloat             function        void       1          N/A       
-12    value                var             float      2          N/A       
-13    putarray             function        void       1          N/A       
-14    len                  var             int        2          N/A       
-15    array                array           int        2          0
-16    putfarray            function        void       1          N/A       
-17    len                  var             int        2          N/A       
-18    array                array           float      2          0
-19    putf                 function        void       1          N/A       
-20    format_string        var             char       2          N/A       
-21    value                var             int        2          N/A       
-22    starttime            function        void       1          N/A       
-23    stoptime             function        void       1          N/A       
-24    main                 function        int        1          N/A       
-25    a                    array           int        3          4 2
-26    b                    array           int        3          4 2
-27    c                    array           int        3          4 2
-28    d                    array           int        3          4 2
-29    e                    array           int        3          4 2
-30    f                    array           int        3          4 2
-31    g                    array           int        3          2 2 2
----------------------------------------------------------------------------
+ID    Name                 Type            Data Type  Function             Shape     
+-------------------------------------------------------------------------------------
+0     getint               function        int        N/A                  N/A       
+1     getch                function        int        N/A                  N/A       
+2     getfloat             function        float      N/A                  N/A       
+3     getarray             function        int        N/A                  N/A       
+4     array                array           int        getarray             0
+5     getfarray            function        int        N/A                  N/A       
+6     array                array           float      getfarray            0
+7     putint               function        void       N/A                  N/A       
+8     value                var             int        putint               N/A       
+9     putch                function        void       N/A                  N/A       
+10    value                var             int        putch                N/A       
+11    putfloat             function        void       N/A                  N/A       
+12    value                var             float      putfloat             N/A       
+13    putarray             function        void       N/A                  N/A       
+14    len                  var             int        putarray             N/A       
+15    array                array           int        putarray             0
+16    putfarray            function        void       N/A                  N/A       
+17    len                  var             int        putfarray            N/A       
+18    array                array           float      putfarray            0
+19    putf                 function        void       N/A                  N/A       
+20    format_string        var             char       putf                 N/A       
+21    value                var             int        putf                 N/A       
+22    starttime            function        void       N/A                  N/A       
+23    stoptime             function        void       N/A                  N/A       
+24    main                 function        int        N/A                  N/A       
+25    a                    array           int        main                 4 2
+26    b                    array           int        main                 4 2
+27    c                    array           int        main                 4 2
+28    d                    array           int        main                 4 2
+29    e                    array           int        main                 4 2
+30    f                    array           int        main                 4 2
+31    g                    array           int        main                 2 2 2
+-------------------------------------------------------------------------------------
 
 --- Generated IR ---
 ; ModuleID = 'main'
@@ -132,6 +132,12 @@ ID    Name                 Type            Data Type  Scope      Shape
 define i32 @main() {
 main.entry:
   %a.25 = alloca [4 x [2 x i32]]
+  %b.26 = alloca [4 x [2 x i32]]
+  %c.27 = alloca [4 x [2 x i32]]
+  %d.28 = alloca [4 x [2 x i32]]
+  %e.29 = alloca [4 x [2 x i32]]
+  %f.30 = alloca [4 x [2 x i32]]
+  %g.31 = alloca [2 x [2 x [2 x i32]]]
   %a.25.initer = alloca i32
   store i32 0, i32* %a.25.initer
   br label %a.25.initer.while.cond
@@ -148,7 +154,6 @@ a.25.initer.while.loop:
   store i32 %1, i32* %a.25.initer
   br label %a.25.initer.while.cond
 a.25.initer.while.merge:
-  %b.26 = alloca [4 x [2 x i32]]
   %b.26.initer = alloca i32
   store i32 0, i32* %b.26.initer
   br label %b.26.initer.while.cond
@@ -181,7 +186,6 @@ b.26.initer.while.merge:
   store i32 2, i32* %10
   %11 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 0
   store i32 1, i32* %11
-  %c.27 = alloca [4 x [2 x i32]]
   %c.27.initer = alloca i32
   store i32 0, i32* %c.27.initer
   br label %c.27.initer.while.cond
@@ -214,7 +218,6 @@ c.27.initer.while.merge:
   store i32 2, i32* %20
   %21 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 0
   store i32 1, i32* %21
-  %d.28 = alloca [4 x [2 x i32]]
   %d.28.initer = alloca i32
   store i32 0, i32* %d.28.initer
   br label %d.28.initer.while.cond
@@ -243,7 +246,6 @@ d.28.initer.while.merge:
   store i32 2, i32* %28
   %29 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.28, i32 0
   store i32 1, i32* %29
-  %e.29 = alloca [4 x [2 x i32]]
   %e.29.initer = alloca i32
   store i32 0, i32* %e.29.initer
   br label %e.29.initer.while.cond
@@ -280,7 +282,6 @@ e.29.initer.while.merge:
   store i32 %35, i32* %42
   %43 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 0
   store i32 %33, i32* %43
-  %f.30 = alloca [4 x [2 x i32]]
   %f.30.initer = alloca i32
   store i32 0, i32* %f.30.initer
   br label %f.30.initer.while.cond
@@ -307,7 +308,6 @@ f.30.initer.while.merge:
   store i32 2, i32* %49
   %50 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.30, i32 0
   store i32 1, i32* %50
-  %g.31 = alloca [2 x [2 x [2 x i32]]]
   %g.31.initer = alloca i32
   store i32 0, i32* %g.31.initer
   br label %g.31.initer.while.cond

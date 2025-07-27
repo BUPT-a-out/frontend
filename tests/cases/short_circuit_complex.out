@@ -45,42 +45,42 @@ Parsing completed successfully.
 |   |   |   |   +-- VAR (sym: result, id: 32)
 
 --- Permanent Symbol Table ---
-ID    Name                 Type            Data Type  Scope      Shape     
----------------------------------------------------------------------------
-0     getint               function        int        1          N/A       
-1     getch                function        int        1          N/A       
-2     getfloat             function        float      1          N/A       
-3     getarray             function        int        1          N/A       
-4     array                array           int        2          0
-5     getfarray            function        int        1          N/A       
-6     array                array           float      2          0
-7     putint               function        void       1          N/A       
-8     value                var             int        2          N/A       
-9     putch                function        void       1          N/A       
-10    value                var             int        2          N/A       
-11    putfloat             function        void       1          N/A       
-12    value                var             float      2          N/A       
-13    putarray             function        void       1          N/A       
-14    len                  var             int        2          N/A       
-15    array                array           int        2          0
-16    putfarray            function        void       1          N/A       
-17    len                  var             int        2          N/A       
-18    array                array           float      2          0
-19    putf                 function        void       1          N/A       
-20    format_string        var             char       2          N/A       
-21    value                var             int        2          N/A       
-22    starttime            function        void       1          N/A       
-23    stoptime             function        void       1          N/A       
-24    sum                  function        int        1          N/A       
-25    a                    var             int        2          N/A       
-26    b                    var             int        2          N/A       
-27    main                 function        int        1          N/A       
-28    a                    var             int        3          N/A       
-29    b                    var             int        3          N/A       
-30    c                    var             int        3          N/A       
-31    d                    var             int        3          N/A       
-32    result               var             int        3          N/A       
----------------------------------------------------------------------------
+ID    Name                 Type            Data Type  Function             Shape     
+-------------------------------------------------------------------------------------
+0     getint               function        int        N/A                  N/A       
+1     getch                function        int        N/A                  N/A       
+2     getfloat             function        float      N/A                  N/A       
+3     getarray             function        int        N/A                  N/A       
+4     array                array           int        getarray             0
+5     getfarray            function        int        N/A                  N/A       
+6     array                array           float      getfarray            0
+7     putint               function        void       N/A                  N/A       
+8     value                var             int        putint               N/A       
+9     putch                function        void       N/A                  N/A       
+10    value                var             int        putch                N/A       
+11    putfloat             function        void       N/A                  N/A       
+12    value                var             float      putfloat             N/A       
+13    putarray             function        void       N/A                  N/A       
+14    len                  var             int        putarray             N/A       
+15    array                array           int        putarray             0
+16    putfarray            function        void       N/A                  N/A       
+17    len                  var             int        putfarray            N/A       
+18    array                array           float      putfarray            0
+19    putf                 function        void       N/A                  N/A       
+20    format_string        var             char       putf                 N/A       
+21    value                var             int        putf                 N/A       
+22    starttime            function        void       N/A                  N/A       
+23    stoptime             function        void       N/A                  N/A       
+24    sum                  function        int        N/A                  N/A       
+25    a                    var             int        sum                  N/A       
+26    b                    var             int        sum                  N/A       
+27    main                 function        int        N/A                  N/A       
+28    a                    var             int        main                 N/A       
+29    b                    var             int        main                 N/A       
+30    c                    var             int        main                 N/A       
+31    d                    var             int        main                 N/A       
+32    result               var             int        main                 N/A       
+-------------------------------------------------------------------------------------
 
 --- Generated IR ---
 ; ModuleID = 'main'
@@ -88,8 +88,8 @@ ID    Name                 Type            Data Type  Scope      Shape
 define i32 @sum(i32 %param.a.25, i32 %param.b.26) {
 sum.entry:
   %a.25 = alloca i32
-  store i32 %param.a.25, i32* %a.25
   %b.26 = alloca i32
+  store i32 %param.a.25, i32* %a.25
   store i32 %param.b.26, i32* %b.26
   %0 = load i32, i32* %a.25
   %1 = load i32, i32* %b.26
@@ -100,14 +100,14 @@ sum.entry:
 define i32 @main() {
 main.entry:
   %a.28 = alloca i32
-  store i32 0, i32* %a.28
   %b.29 = alloca i32
-  store i32 1, i32* %b.29
   %c.30 = alloca i32
-  store i32 2, i32* %c.30
   %d.31 = alloca i32
-  store i32 4, i32* %d.31
   %result.32 = alloca i32
+  store i32 0, i32* %a.28
+  store i32 1, i32* %b.29
+  store i32 2, i32* %c.30
+  store i32 4, i32* %d.31
   store i32 0, i32* %result.32
   %3 = load i32, i32* %a.28
   %tobool.4 = icmp ne i32 %3, 0

@@ -24,34 +24,34 @@ Parsing completed successfully.
 |   |   |   |   +-- CONST (int value: 0)
 
 --- Permanent Symbol Table ---
-ID    Name                 Type            Data Type  Scope      Shape     
----------------------------------------------------------------------------
-0     getint               function        int        1          N/A       
-1     getch                function        int        1          N/A       
-2     getfloat             function        float      1          N/A       
-3     getarray             function        int        1          N/A       
-4     array                array           int        2          0
-5     getfarray            function        int        1          N/A       
-6     array                array           float      2          0
-7     putint               function        void       1          N/A       
-8     value                var             int        2          N/A       
-9     putch                function        void       1          N/A       
-10    value                var             int        2          N/A       
-11    putfloat             function        void       1          N/A       
-12    value                var             float      2          N/A       
-13    putarray             function        void       1          N/A       
-14    len                  var             int        2          N/A       
-15    array                array           int        2          0
-16    putfarray            function        void       1          N/A       
-17    len                  var             int        2          N/A       
-18    array                array           float      2          0
-19    putf                 function        void       1          N/A       
-20    format_string        var             char       2          N/A       
-21    value                var             int        2          N/A       
-22    starttime            function        void       1          N/A       
-23    stoptime             function        void       1          N/A       
-24    main                 function        int        1          N/A       
----------------------------------------------------------------------------
+ID    Name                 Type            Data Type  Function             Shape     
+-------------------------------------------------------------------------------------
+0     getint               function        int        N/A                  N/A       
+1     getch                function        int        N/A                  N/A       
+2     getfloat             function        float      N/A                  N/A       
+3     getarray             function        int        N/A                  N/A       
+4     array                array           int        getarray             0
+5     getfarray            function        int        N/A                  N/A       
+6     array                array           float      getfarray            0
+7     putint               function        void       N/A                  N/A       
+8     value                var             int        putint               N/A       
+9     putch                function        void       N/A                  N/A       
+10    value                var             int        putch                N/A       
+11    putfloat             function        void       N/A                  N/A       
+12    value                var             float      putfloat             N/A       
+13    putarray             function        void       N/A                  N/A       
+14    len                  var             int        putarray             N/A       
+15    array                array           int        putarray             0
+16    putfarray            function        void       N/A                  N/A       
+17    len                  var             int        putfarray            N/A       
+18    array                array           float      putfarray            0
+19    putf                 function        void       N/A                  N/A       
+20    format_string        var             char       putf                 N/A       
+21    value                var             int        putf                 N/A       
+22    starttime            function        void       N/A                  N/A       
+23    stoptime             function        void       N/A                  N/A       
+24    main                 function        int        N/A                  N/A       
+-------------------------------------------------------------------------------------
 
 --- Generated IR ---
 ; ModuleID = 'main'

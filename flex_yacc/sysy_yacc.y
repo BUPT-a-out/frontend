@@ -189,13 +189,22 @@ FuncDef:
     FuncHead Block {
         add_child($1, $2);
         $$ = $1;
+        exit_function();
         exit_scope(); // Pop scope for params and function body
     }
     ;
 
 FuncHead:
-    BType IDENTIFIER '(' FuncFParams ')' { $$ = function_def($2, $1->data.data_type, $4); }
-    | VOID IDENTIFIER '(' FuncFParams ')' { $$ = function_def($2, DATA_VOID, $4); }
+    BType IDENTIFIER '(' FuncFParams ')' {
+        $$ = function_def($2, $1->data.data_type, $4);
+        if ($$->data_type == NODEDATA_SYMB && $$->data.symb_ptr)
+            enter_function($$->data.symb_ptr);
+    }
+    | VOID IDENTIFIER '(' FuncFParams ')' {
+        $$ = function_def($2, DATA_VOID, $4);
+        if ($$->data_type == NODEDATA_SYMB && $$->data.symb_ptr)
+            enter_function($$->data.symb_ptr);
+    }
     ;
 
 FuncFParams:
@@ -641,6 +650,7 @@ ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params) {
                 type_node = param_node->children[0];
                 var_node = param_node->children[1];
                 var_def(var_node, type_node->data.data_type);
+                var_node->data.symb_ptr->function = func_sym;
                 func_sym->attributes.func_info.params[i] = var_node->data.symb_ptr;
 
                 param_node->children[1] = NULL;
@@ -656,8 +666,8 @@ ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params) {
 }
 
 ASTNodePtr get_const_value(ASTNodePtr node) {
-    SymbolPtr sym;
-    ASTNodePtr valued;
+    SymbolPtr sym = NULL;
+    ASTNodePtr valued = NULL;
     NodeData data;
 
     if (!node) return node;

@@ -130,7 +130,6 @@ std::vector<int> flat_to_multi_index(int flat_index,
 
 // 辅助函数：处理数组初始化列表
 midend::Constant* process_array_init_list(ASTNodePtr init_list,
-                                          midend::Context* ctx,
                                           midend::Type* target_type,
                                           DataType base_type) {
     if (!init_list || !target_type || !target_type->isArrayType())
@@ -427,16 +426,26 @@ midend::Value* get_array_element_ptr(
 
 midend::Value* def_var(midend::IRBuilder& builder, SymbolPtr symbol,
                        std::unordered_map<int, midend::Value*>& local_vars) {
-    // 变量名
-    std::string var_name = get_symbol_name(symbol);
+    SymbolType symb_type = symbol->symbol_type;
+    std::string name = get_symbol_name(symbol);
+    midend::Type* type = nullptr;
+    midend::Value* alloca = nullptr;
 
-    // 获取变量类型
-    midend::Type* var_type =
-        get_ir_type(builder.getContext(), symbol->data_type);
+    if (symb_type == SYMB_VAR || symb_type == SYMB_CONST_VAR) {
+        // 获取变量类型
+        type = get_ir_type(builder.getContext(), symbol->data_type);
+        // 创建局部变量
+        if (type) alloca = builder.createAlloca(type, nullptr, name);
+    } else if (symb_type == SYMB_ARRAY || symb_type == SYMB_CONST_ARRAY) {
+        // 创建数组类型
+        type = get_array_type(builder.getContext(), symbol->data_type,
+                              symbol->attributes.array_info.dimensions,
+                              symbol->attributes.array_info.shape);
+        // 创建局部数组
+        if (type) alloca = builder.createAlloca(type, nullptr, name);
+    }
 
-    // 创建局部变量
-    midend::Value* alloca = builder.createAlloca(var_type, nullptr, var_name);
-    local_vars[symbol->id] = alloca;
+    if (alloca) local_vars[symbol->id] = alloca;
     return alloca;
 }
 
@@ -501,6 +510,8 @@ midend::Value* translate_node(
             if (global_it != global_var_tab.end())
                 return builder.createLoad(global_it->second,
                                           std::to_string(var_idx++));
+
+            return nullptr;
         }
 
         case NODE_ARRAY:
@@ -760,8 +771,17 @@ midend::Value* translate_node(
             SymbolPtr symbol = node->data.symb_ptr;
             if (node->data_type != NODEDATA_SYMB || !symbol) return nullptr;
 
-            // 创建局部变量
-            midend::Value* alloca = def_var(builder, symbol, local_vars);
+            if (symbol->symbol_type != SYMB_VAR &&
+                symbol->symbol_type != SYMB_CONST_VAR)
+                return nullptr;
+
+            // 查找局部变量
+            midend::Value* alloca = nullptr;
+            auto it = local_vars.find(symbol->id);
+            if (it != local_vars.end())
+                alloca = it->second;
+            else
+                return nullptr;
 
             // 如果有初始化值（第一个子节点是常量或表达式）
             if (node->child_count > 0) {
@@ -787,24 +807,20 @@ midend::Value* translate_node(
                 return nullptr;
 
             // 创建数组类型
-            midend::Type* array_type =
-                get_array_type(builder.getContext(), symbol->data_type,
-                               symbol->attributes.array_info.dimensions,
-                               symbol->attributes.array_info.shape);
-
-            // 创建局部数组
-            std::string array_name = get_symbol_name(symbol);
-            midend::Value* array_alloca =
-                builder.createAlloca(array_type, nullptr, array_name);
-            local_vars[symbol->id] = array_alloca;
+            midend::Value* alloca = nullptr;
+            auto it = local_vars.find(symbol->id);
+            if (it != local_vars.end())
+                alloca = it->second;
+            else
+                return nullptr;
 
             if (node->child_count > 1) {
                 ASTNodePtr init_list = node->children[1];
-                initialize_array_elements(init_list, symbol, array_alloca,
-                                          builder, current_func, local_vars);
+                initialize_array_elements(init_list, symbol, alloca, builder,
+                                          current_func, local_vars);
             }
 
-            return array_alloca;
+            return alloca;
         }
 
         case NODE_IF_STMT: {
@@ -1002,17 +1018,16 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
 
     auto ctx = module->getContext();
 
-    // 从符号表中获取返回类型和函数名
+    // 从符号表中获取返回类型、函数名和函数的其它信息
     midend::Type* return_type = get_ir_type(ctx, func_sym->data_type);
     std::string func_name = (func_sym->name) ? func_sym->name : "unknown.func";
+    FuncInfo func_info = func_sym->attributes.func_info;
 
     // 函数参数节点（函数参数作为局部变量）
-    ASTNodePtr param_node = node->children[0];
-    SymbolPtr param_sym;
     std::vector<midend::Type*> param_types;
     std::vector<std::string> param_names;
-    for (int i = 0; i < param_node->child_count; i++) {
-        param_sym = param_node->children[i]->data.symb_ptr;
+    for (int i = 0; i < func_info.param_count; i++) {
+        SymbolPtr param_sym = func_info.params[i];
         midend::Type* param_type = nullptr;
 
         if (param_sym->symbol_type == SYMB_ARRAY) {
@@ -1052,20 +1067,34 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
         midend::BasicBlock::Create(ctx, func_name + ".entry", func);
     midend::IRBuilder builder(entry_bb);
 
-    // 在函数体内部定义函数形参
+    // 函数局部变量
     std::unordered_map<int, midend::Value*> func_local_vars;
-    for (int i = 0; i < param_node->child_count; i++) {
-        param_sym = param_node->children[i]->data.symb_ptr;
+
+    // 在函数体内部定义函数形参
+    for (int i = 0; i < func_info.param_count; i++) {
+        SymbolPtr param_sym = func_info.params[i];
         midend::Value* param;
         if (param_sym->symbol_type == SYMB_VAR) {
             param = def_var(builder, param_sym, func_local_vars);
-            midend::Value* param_value = func->getArg(i);
-            builder.createStore(param_value, param);
         } else {
             param = func->getArg(i);
         }
         function_param_symbols.insert(param_sym->id);
         func_local_vars[param_sym->id] = param;
+    }
+
+    // 定义所有局部变量
+    for (int i = 0; i < func_info.var_count; i++) {
+        def_var(builder, func_info.vars[i], func_local_vars);
+    }
+
+    // 形参赋值给存储在栈中的对象
+    for (int i = 0; i < func_info.param_count; i++) {
+        SymbolPtr param_sym = func_info.params[i];
+        if (param_sym->symbol_type == SYMB_VAR) {
+            midend::Value* param_value = func->getArg(i);
+            builder.createStore(param_value, func_local_vars[param_sym->id]);
+        }
     }
 
     // 处理函数体
@@ -1140,7 +1169,7 @@ void translate_root(ASTNodePtr node, midend::Module* module) {
                 midend::Constant* init = nullptr;
 
                 if (child->child_count > 1) {
-                    init = process_array_init_list(child->children[1], ctx,
+                    init = process_array_init_list(child->children[1],
                                                    array_type, sym->data_type);
                 }
 
