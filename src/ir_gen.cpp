@@ -109,13 +109,13 @@ midend::Type* get_array_type(midend::Context* ctx, DataType base_type,
     return elem_type;
 }
 
-// 辅助函数：计算数组总大小
-int calculate_array_size(SymbolPtr symbol) {
+// 辅助函数：计算数组第dim_start维之后的总大小
+int calculate_array_size(SymbolPtr symbol, int dim_start) {
     if (symbol->symbol_type != SYMB_ARRAY) return 1;
     int output = 1;
     ArrayInfo array_info = symbol->attributes.array_info;
-    for (int i = 0; i < array_info.dimensions; i++)
-        output = output * array_info.shape[i];
+    for (int i = dim_start; i < array_info.dimensions; i++)
+        if (array_info.shape[i]) output = output * array_info.shape[i];
     return output;
 }
 
@@ -203,71 +203,6 @@ midend::Constant* process_array_init_list(ASTNodePtr init_list,
     };
 
     return process_init_sparse(init_list, target_type);
-}
-
-// 辅助函数：处理数组初始化列表（支持扁平和嵌套初始化）
-void process_global_array_init_recursive(
-    ASTNodePtr init_list, midend::Context* ctx, midend::Type* target_type,
-    DataType base_type, std::vector<midend::Constant*>& flat_elements,
-    int& current_pos, const std::vector<int>& target_dims, int current_dim) {
-    if (!init_list || !target_type) return;
-
-    for (int i = 0; i < init_list->child_count; ++i) {
-        ASTNodePtr child = init_list->children[i];
-
-        if (child->node_type == NODE_LIST) {
-            // 嵌套初始化
-            if (current_dim < target_dims.size() - 1) {
-                // 计算子数组的大小
-                int subarray_size = 1;
-                for (int j = current_dim + 1; j < target_dims.size(); j++) {
-                    subarray_size *= target_dims[j];
-                }
-
-                // 对齐到子数组边界
-                if (current_pos % subarray_size != 0) {
-                    current_pos =
-                        ((current_pos / subarray_size) + 1) * subarray_size;
-                }
-
-                int start_pos = current_pos;
-                process_global_array_init_recursive(
-                    child, ctx, target_type, base_type, flat_elements,
-                    current_pos, target_dims, current_dim + 1);
-
-                // 嵌套初始化完成后，移动到下一个子数组的开始位置
-                current_pos = start_pos + subarray_size;
-            }
-        } else if (child->node_type == NODE_CONST) {
-            // 扁平初始化元素
-            if (current_pos < flat_elements.size()) {
-                midend::Type* base_elem_type = target_type;
-                while (base_elem_type->isArrayType()) {
-                    base_elem_type =
-                        static_cast<midend::ArrayType*>(base_elem_type)
-                            ->getElementType();
-                }
-
-                midend::Constant* elem = nullptr;
-                if (base_elem_type->isIntegerType() &&
-                    child->data_type == NODEDATA_INT && base_type == DATA_INT) {
-                    elem = midend::ConstantInt::get(
-                        static_cast<midend::IntegerType*>(base_elem_type),
-                        child->data.direct_int);
-                } else if (base_elem_type->isFloatType() &&
-                           child->data_type == NODEDATA_FLOAT &&
-                           base_type == DATA_FLOAT) {
-                    elem = midend::ConstantFP::get(
-                        static_cast<midend::FloatType*>(base_elem_type),
-                        child->data.direct_float);
-                }
-
-                if (elem) {
-                    flat_elements[current_pos++] = elem;
-                }
-            }
-        }
-    }
 }
 
 // 辅助函数：处理局部数组初始化的递归函数

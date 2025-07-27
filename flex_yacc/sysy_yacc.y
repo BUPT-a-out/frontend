@@ -6,6 +6,7 @@
     #include <ctype.h>
     #include <math.h>
     #include "sy_parser/y.tab.h"
+    #include "sy_parser/utils.h"
     #include "sy_parser/AST.h"
     #include "sy_parser/symbol_table.h"
 
@@ -17,7 +18,8 @@
     void yyerror(const char *s);
 
     SymbolType node_type_to_sym_type(NodeType node_type);
-    void var_def(ASTNodePtr var_node, DataType data_type);
+    ASTNodePtr initer_process(SymbolPtr symbol, ASTNodePtr initer);
+    SymbolPtr var_def(ASTNodePtr var_node, DataType data_type);
     ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params);
     ASTNodePtr get_const_value(ASTNodePtr node);
     ASTNodePtr fold_unary_exp(ASTNodePtr node);
@@ -111,10 +113,9 @@ ConstDefList:
     }
     | ConstDefList ',' ConstDef {
         DataType data_type = DATA_INT;
-        if ($1->children[0]) {
+        if ($1->children[0])
             if ($1->children[0]->data.symb_ptr)
                 data_type = $1->children[0]->data.symb_ptr->data_type;
-        }
         var_def($3, data_type);
         add_child($1, $3);
         $$ = $1;
@@ -136,8 +137,8 @@ ConstInitVal:
     ;
 
 ConstInitValList:
-    /* empty */ { $$ = create_ast_node(NODE_LIST, "ConstIniter", yylineno, 0); }
-    | ConstInitVal { $$ = create_ast_node(NODE_LIST, "ConstIniter", yylineno, 1, $1); }
+    /* empty */ { $$ = create_ast_node(NODE_LIST, "ConstArrayIniter", yylineno, 0); }
+    | ConstInitVal { $$ = create_ast_node(NODE_LIST, "ConstArrayIniter", yylineno, 1, $1); }
     | ConstInitValList ',' ConstInitVal { add_child($1, $3); $$ = $1; }
     ;
 
@@ -500,8 +501,55 @@ SymbolType node_type_to_sym_type(NodeType node_type) {
     }
 }
 
-void var_def(ASTNodePtr var_node, DataType data_type) {
-    if (!var_node) return;
+// 辅助函数：计算数组第dim_start维之后的总大小
+int calculate_array_size(SymbolPtr symbol, int dim_start) {
+    if (symbol->symbol_type != SYMB_ARRAY) return 1;
+    int output = 1;
+    ArrayInfo array_info = symbol->attributes.array_info;
+    for (int i = dim_start; i < array_info.dimensions; i++)
+        if (array_info.shape[i]) output = output * array_info.shape[i];
+    return output;
+}
+
+// 辅助函数：补全初始化器隐含的维度
+ASTNodePtr recursive_reshape_initer(ASTNodePtr initer, SymbolPtr symbol,
+                                    int current_dim, const char *name) {
+    if (!initer) return NULL;
+    if (current_dim >= symbol->attributes.array_info.dimensions - 1)
+        return initer;
+
+    ASTNodePtr output = create_ast_node(NODE_LIST, my_strdup(name), yylineno, 0);
+    ASTNodePtr piece;
+    int current_array_size = calculate_array_size(symbol, current_dim + 1);
+    int acc_item_num = 0;
+    for (int i = 0; i < initer->child_count; i++) {
+        ASTNodePtr child = initer->children[i];
+        if (child->node_type == NODE_LIST) {
+            if (acc_item_num) { add_child(output, piece); acc_item_num = 0; }
+            add_child(output, child);
+            initer->children[i] = NULL;
+        } else {
+            if (!acc_item_num)
+                piece = create_ast_node(NODE_LIST, my_strdup(name), yylineno, 0);
+            add_child(piece, child);
+            initer->children[i] = NULL;
+            acc_item_num++;
+            if (acc_item_num >= current_array_size) {
+                add_child(output, piece);
+                acc_item_num = 0;
+            }
+        }
+    }
+    if (acc_item_num) { add_child(output, piece); acc_item_num = 0; }
+    free_ast(initer);
+    for (int i = 0; i < output->child_count; i++)
+        output->children[i] = recursive_reshape_initer(
+            output->children[i], symbol, current_dim + 1, name);
+    return output;
+}
+
+SymbolPtr var_def(ASTNodePtr var_node, DataType data_type) {
+    if (!var_node) return NULL;
 
     NodeData data;
     SymbolType sym_type = node_type_to_sym_type(var_node->node_type);
@@ -513,11 +561,11 @@ void var_def(ASTNodePtr var_node, DataType data_type) {
     float float_init_value;
     // var for ARRAY
     ASTNodePtr dim_node, single_dim_node;
-    int dim_count, dim_size, j;
+    int dim_count, dim_size;
 
     switch (var_node->node_type) {
         case NODE_CONST_VAR_DEF:
-            if (var_node->child_count == 0) return;
+            if (var_node->child_count == 0) return NULL;
             var_init_node = var_node->children[0];
             if (data_type == DATA_INT) {
                 int_init_value = 0;
@@ -543,7 +591,7 @@ void var_def(ASTNodePtr var_node, DataType data_type) {
             sym->attributes.array_info.elem_num = 1;
             sym->attributes.array_info.shape = (int*)malloc(sizeof(int) * dim_count);
 
-            for (j = 0; j < dim_count; ++j) {
+            for (int j = 0; j < dim_count; ++j) {
                 single_dim_node = dim_node->children[j];
                 dim_size = 0;
                 if (single_dim_node->data_type == NODEDATA_INT)
@@ -559,6 +607,11 @@ void var_def(ASTNodePtr var_node, DataType data_type) {
             free_ast(dim_node);
             var_node->children[0] = NULL;
             // 可根据 valid 变量决定后续处理
+            if (var_node->child_count > 1) {
+                ASTNodePtr initer = var_node->children[1];
+                var_node->children[1] = recursive_reshape_initer(
+                    initer, sym, 0, my_strdup(initer->name));
+            }
             break;
         default:
             break;
