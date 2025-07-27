@@ -618,6 +618,7 @@ SymbolPtr var_def(ASTNodePtr var_node, DataType data_type) {
     }
     data.symb_ptr = sym;
     set_ast_node_data(var_node, HOLD_NODETYPE, NULL, data, NODEDATA_SYMB, -1);
+    return sym;
 }
 
 ASTNodePtr function_def(char *name, DataType type, ASTNodePtr params) {
