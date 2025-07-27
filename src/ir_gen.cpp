@@ -290,7 +290,8 @@ void initialize_array_elements(
     midend::BasicBlock* loopBB =
         builder.createBasicBlock(var_name + ".while.loop", current_func);
     builder.setInsertPoint(loopBB);
-    midend::Value* single_idx = builder.createLoad(i_alloca, std::to_string(var_idx++));
+    midend::Value* single_idx =
+        builder.createLoad(i_alloca, std::to_string(var_idx++));
     std::vector<midend::Value*> indices;
     indices.push_back(single_idx);
     midend::Value* elem_ptr = builder.createGEP(
