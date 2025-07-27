@@ -135,8 +135,14 @@ midend::Constant* process_array_init_list(ASTNodePtr init_list,
     if (!init_list || !target_type || !target_type->isArrayType())
         return nullptr;
 
-    // 如果初始化列表为空，返回nullptr
+    // 如果初始化列表为空，创建一个空的常量数组
     if (init_list->child_count == 0) {
+        if (target_type->isArrayType()) {
+            midend::ArrayType* array_type =
+                static_cast<midend::ArrayType*>(target_type);
+            std::vector<midend::Constant*> empty_elements;
+            return midend::ConstantArray::get(array_type, empty_elements);
+        }
         return nullptr;
     }
 
@@ -183,12 +189,8 @@ midend::Constant* process_array_init_list(ASTNodePtr init_list,
             }
         }
 
-        // 如果有元素，创建常量数组
-        if (!elements.empty()) {
-            return midend::ConstantArray::get(array_type, elements);
-        }
-
-        return nullptr;
+        // 创建常量数组（即使为空）
+        return midend::ConstantArray::get(array_type, elements);
     };
 
     return process_init_sparse(init_list, target_type);
