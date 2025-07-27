@@ -290,11 +290,11 @@ void initialize_array_elements(
     midend::BasicBlock* loopBB =
         builder.createBasicBlock(var_name + ".while.loop", current_func);
     builder.setInsertPoint(loopBB);
-    midend::Value* single_idx = builder.createLoad(i_alloca);
+    midend::Value* single_idx = builder.createLoad(i_alloca, std::to_string(var_idx++));
     std::vector<midend::Value*> indices;
     indices.push_back(single_idx);
-    midend::Value* elem_ptr =
-        builder.createGEP(one_dim_array_type, array_alloca, indices);
+    midend::Value* elem_ptr = builder.createGEP(
+        one_dim_array_type, array_alloca, indices, std::to_string(var_idx++));
     // 默认填充0
     midend::Value* fill_data;
     if (symbol->data_type == DATA_INT)
@@ -344,7 +344,8 @@ void initialize_array_elements(
         std::vector<midend::Value*> indices;
         indices.push_back(single_idx);
         midend::Value* elem_ptr =
-            builder.createGEP(one_dim_array_type, array_alloca, indices);
+            builder.createGEP(one_dim_array_type, array_alloca, indices,
+                              std::to_string(var_idx++));
         builder.createStore(init_value, elem_ptr);
     }
 }
@@ -420,8 +421,10 @@ midend::Value* get_array_element_ptr(
     if (!array_ptr || indices.empty()) return nullptr;
 
     return function_param_symbols.count(symbol->id)
-               ? builder.createGEP(array_ptr->getType(), array_ptr, indices)
-               : builder.createGEP(array_type, array_ptr, indices);
+               ? builder.createGEP(array_ptr->getType(), array_ptr, indices,
+                                   std::to_string(var_idx++))
+               : builder.createGEP(array_type, array_ptr, indices,
+                                   std::to_string(var_idx++));
 }
 
 midend::Value* def_var(midend::IRBuilder& builder, SymbolPtr symbol,
@@ -545,7 +548,12 @@ midend::Value* translate_node(
             }
             midend::Value* gep =
                 get_array_element_ptr(symbol, indices, builder, local_vars);
-            return gep ? builder.createLoad(gep) : nullptr;
+            if (!gep) return nullptr;
+
+            if (node->child_count < symbol->attributes.array_info.dimensions)
+                return gep;
+            else
+                return builder.createLoad(gep, std::to_string(var_idx++));
         }
 
         case NODE_FUNC_CALL: {
