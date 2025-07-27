@@ -29,36 +29,36 @@ Parsing completed successfully.
 |   |   |   |   |   |   +-- CONST (int value: 7)
 
 --- Permanent Symbol Table ---
-ID    Name                 Type            Data Type  Scope      Shape     
----------------------------------------------------------------------------
-0     getint               function        int        1          N/A       
-1     getch                function        int        1          N/A       
-2     getfloat             function        float      1          N/A       
-3     getarray             function        int        1          N/A       
-4     array                array           int        2          0
-5     getfarray            function        int        1          N/A       
-6     array                array           float      2          0
-7     putint               function        void       1          N/A       
-8     value                var             int        2          N/A       
-9     putch                function        void       1          N/A       
-10    value                var             int        2          N/A       
-11    putfloat             function        void       1          N/A       
-12    value                var             float      2          N/A       
-13    putarray             function        void       1          N/A       
-14    len                  var             int        2          N/A       
-15    array                array           int        2          0
-16    putfarray            function        void       1          N/A       
-17    len                  var             int        2          N/A       
-18    array                array           float      2          0
-19    putf                 function        void       1          N/A       
-20    format_string        var             char       2          N/A       
-21    value                var             int        2          N/A       
-22    starttime            function        void       1          N/A       
-23    stoptime             function        void       1          N/A       
-24    a                    array           int        1          4 2
-25    main                 function        int        1          N/A       
-26    b                    array           int        3          4 2
----------------------------------------------------------------------------
+ID    Name                 Type            Data Type  Function             Shape     
+-------------------------------------------------------------------------------------
+0     getint               function        int        N/A                  N/A       
+1     getch                function        int        N/A                  N/A       
+2     getfloat             function        float      N/A                  N/A       
+3     getarray             function        int        N/A                  N/A       
+4     array                array           int        getarray             0
+5     getfarray            function        int        N/A                  N/A       
+6     array                array           float      getfarray            0
+7     putint               function        void       N/A                  N/A       
+8     value                var             int        putint               N/A       
+9     putch                function        void       N/A                  N/A       
+10    value                var             int        putch                N/A       
+11    putfloat             function        void       N/A                  N/A       
+12    value                var             float      putfloat             N/A       
+13    putarray             function        void       N/A                  N/A       
+14    len                  var             int        putarray             N/A       
+15    array                array           int        putarray             0
+16    putfarray            function        void       N/A                  N/A       
+17    len                  var             int        putfarray            N/A       
+18    array                array           float      putfarray            0
+19    putf                 function        void       N/A                  N/A       
+20    format_string        var             char       putf                 N/A       
+21    value                var             int        putf                 N/A       
+22    starttime            function        void       N/A                  N/A       
+23    stoptime             function        void       N/A                  N/A       
+24    a                    array           int        N/A                  4 2
+25    main                 function        int        N/A                  N/A       
+26    b                    array           int        main                 4 2
+-------------------------------------------------------------------------------------
 
 --- Generated IR ---
 ; ModuleID = 'main'
@@ -72,28 +72,28 @@ main.entry:
   store i32 0, i32* %b.26.initer
   br label %b.26.initer.while.cond
 b.26.initer.while.cond:
-  %2 = load i32, i32* %b.26.initer
-  %lt.3 = icmp slt i32 %2, 8
-  br i1 %lt.3, label %b.26.initer.while.loop, label %b.26.initer.while.merge
+  %4 = load i32, i32* %b.26.initer
+  %lt.5 = icmp slt i32 %4, 8
+  br i1 %lt.5, label %b.26.initer.while.loop, label %b.26.initer.while.merge
 b.26.initer.while.loop:
   %0 = load i32, i32* %b.26.initer
   %1 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 %0
   store i32 0, i32* %1
-  %0 = load i32, i32* %b.26.initer
-  %1 = add i32 %0, 1
-  store i32 %1, i32* %b.26.initer
+  %2 = load i32, i32* %b.26.initer
+  %3 = add i32 %2, 1
+  store i32 %3, i32* %b.26.initer
   br label %b.26.initer.while.cond
 b.26.initer.while.merge:
-  %2 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 6
-  store i32 7, i32* %2
-  %3 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 3
-  store i32 4, i32* %3
-  %4 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 2
-  store i32 3, i32* %4
-  %5 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 1
-  store i32 2, i32* %5
-  %6 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 0
-  store i32 1, i32* %6
+  %6 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 6
+  store i32 7, i32* %6
+  %7 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 3
+  store i32 4, i32* %7
+  %8 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 2
+  store i32 3, i32* %8
+  %9 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 1
+  store i32 2, i32* %9
+  %10 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 0
+  store i32 1, i32* %10
   ret i32 0
 }
 
