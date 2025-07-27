@@ -109,16 +109,6 @@ midend::Type* get_array_type(midend::Context* ctx, DataType base_type,
     return elem_type;
 }
 
-// 辅助函数：计算数组第dim_start维之后的总大小
-int calculate_array_size(SymbolPtr symbol, int dim_start) {
-    if (symbol->symbol_type != SYMB_ARRAY) return 1;
-    int output = 1;
-    ArrayInfo array_info = symbol->attributes.array_info;
-    for (int i = dim_start; i < array_info.dimensions; i++)
-        if (array_info.shape[i]) output = output * array_info.shape[i];
-    return output;
-}
-
 // 辅助函数：获取多维数组的维度信息
 void get_array_dimensions(midend::Type* type, std::vector<int>& dims) {
     if (!type->isArrayType()) return;
