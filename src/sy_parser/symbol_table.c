@@ -123,6 +123,8 @@ void enter_function(SymbolPtr func_symb) {
 
 void exit_function() { func_scope = NULL; }
 
+SymbolPtr get_current_function_scope() { return func_scope; }
+
 void add_symbol_to_function_vars(SymbolPtr symbol) {
     FuncInfo func_scope_info = func_scope->attributes.func_info;
     if (!func_scope_info.var_capacity) {
@@ -175,7 +177,7 @@ SymbolPtr define_symbol(const char* name, SymbolType sym_type,
     SymbolPtr new_sym = (SymbolPtr)malloc(sizeof(Symbol));
     new_sym->id = permanent_table.symb_count;
     new_sym->name = my_strdup(name);
-    new_sym->function = func_scope;
+    new_sym->function = get_current_function_scope();
     new_sym->symbol_type = sym_type;
     new_sym->data_type = data_type;
     new_sym->lineno = lineno;

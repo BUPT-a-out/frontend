@@ -33,9 +33,9 @@ Parsing completed successfully.
 |   |   |   |   +-- UNARY_OP: !
 |   |   |   |   |   +-- VAR (sym: result, id: 27)
 |   |   |   |   +-- LIST: If-2
-|   |   |   |   |   +-- RETURN_STMT
+|   |   |   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
 |   |   |   |   |   |   +-- VAR (sym: b, id: 26)
-|   |   |   +-- RETURN_STMT
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
 |   |   |   |   +-- VAR (sym: result, id: 27)
 
 --- Permanent Symbol Table ---
@@ -83,38 +83,38 @@ main.entry:
   store i32 1, i32* %b.26
   store i32 0, i32* %result.27
   %0 = load i32, i32* %a.25
-  %tobool.1 = icmp ne i32 %0, 0
-  br i1 %tobool.1, label %and.1.rhs, label %and.1.merge
+  %1 = trunc i32 %0 to i1
+  br i1 %1, label %and.1.rhs, label %and.1.merge
 and.1.rhs:
   %2 = load i32, i32* %b.26
-  %tobool.3 = icmp ne i32 %2, 0
   br label %and.1.merge
 and.1.merge:
-  %and.1.result = phi i1 [ 0, %main.entry ], [ %tobool.3, %and.1.rhs ]
+  %and.1.result = phi i1 [ 0, %main.entry ], [ %2, %and.1.rhs ]
   br i1 %and.1.result, label %if.0.then, label %if.0.merge
 if.0.then:
   store i32 1, i32* %result.27
   br label %if.0.merge
 if.0.merge:
-  %4 = load i32, i32* %b.26
-  %tobool.5 = icmp ne i32 %4, 0
-  br i1 %tobool.5, label %or.3.merge, label %or.3.rhs
+  %3 = load i32, i32* %b.26
+  %4 = trunc i32 %3 to i1
+  br i1 %4, label %or.3.merge, label %or.3.rhs
 or.3.rhs:
-  %6 = load i32, i32* %a.25
-  %tobool.7 = icmp ne i32 %6, 0
+  %5 = load i32, i32* %a.25
   br label %or.3.merge
 or.3.merge:
-  %or.3.result = phi i1 [ 1, %if.0.merge ], [ %tobool.7, %or.3.rhs ]
+  %or.3.result = phi i1 [ 1, %if.0.merge ], [ %5, %or.3.rhs ]
   br i1 %or.3.result, label %if.2.then, label %if.2.merge
 if.2.then:
-  %8 = load i32, i32* %result.27
-  %add.9 = add i32 %8, 10
-  store i32 %add.9, i32* %result.27
+  %6 = load i32, i32* %result.27
+  %add.7 = add i32 %6, 10
+  store i32 %add.7, i32* %result.27
   br label %if.2.merge
 if.2.merge:
-  %10 = load i32, i32* %result.27
-  %not.11 = icmp eq i32 %10, 0
-  br i1 %not.11, label %if.4.then, label %if.4.merge
+  %8 = load i32, i32* %result.27
+  %not.9 = icmp eq i32 %8, 0
+  %10 = sitofp i1 %not.9 to i32
+  %11 = trunc i32 %10 to i1
+  br i1 %11, label %if.4.then, label %if.4.merge
 if.4.then:
   %12 = load i32, i32* %b.26
   ret i32 %12

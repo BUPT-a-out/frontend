@@ -15,7 +15,7 @@ extern "C" {
 
 extern std::unordered_map<int, midend::Function*> func_tab;
 
-// ¾²Ì¬Á´½Ó¿âº¯Êı¼ÇÂ¼±í
+// é™æ€é“¾æ¥åº“å‡½æ•°è®°å½•è¡¨
 static std::unordered_map<std::string, SymbolPtr> func_name_to_ptr;
 
 void add_runtime_lib_to_symbol_table() {
@@ -48,7 +48,7 @@ void add_runtime_lib_to_symbol_table() {
     param = define_symbol("array", SYMB_ARRAY, DATA_INT, 0);
     param->function = sym;
     param->attributes.array_info.dimensions = 1;
-    param->attributes.array_info.shape = (int*)malloc(sizeof(int));  // Î¬¶ÈÎ´Öª
+    param->attributes.array_info.shape = (int*)malloc(sizeof(int));  // ç»´åº¦æœªçŸ¥
     param->attributes.array_info.shape[0] = 0;
     sym->attributes.func_info.params[0] = param;
     exit_scope();
@@ -140,7 +140,7 @@ void add_runtime_lib_to_symbol_table() {
     // 11. void putf(const char*, int, ...)
     sym = define_symbol("putf", SYMB_FUNCTION, DATA_VOID, 0);
     enter_scope();
-    sym->attributes.func_info.param_count = 2;  // ±ä²Îº¯Êı£¬Ç°Á½¸ö²ÎÊı
+    sym->attributes.func_info.param_count = 2;  // å˜å‚å‡½æ•°ï¼Œå‰ä¸¤ä¸ªå‚æ•°
     sym->attributes.func_info.params =
         (SymbolPtr*)malloc(2 * sizeof(SymbolPtr));
     param = define_symbol("format_string", SYMB_VAR, DATA_CHAR, 0);

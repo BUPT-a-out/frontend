@@ -1,6 +1,6 @@
 #include "ir_gen.h"
 
-#include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -62,7 +62,7 @@ midend::Value* get_array_element_ptr(
 
 midend::Value* translate_node(
     ASTNodePtr node, midend::IRBuilder& builder, midend::Function* current_func,
-    std::unordered_map<int, midend::Value*>& local_vars, DataType need_type);
+    std::unordered_map<int, midend::Value*>& local_vars);
 
 // 辅助函数：判断基本块是否在break或continue填充向量中
 bool in_break_continue_pos(midend::BasicBlock* block) {
@@ -93,6 +93,60 @@ midend::Type* get_ir_type(midend::Context* ctx, DataType data_type) {
             return ctx->getVoidType();
         default:
             return ctx->getInt32Type();  // 默认使用int32
+    }
+}
+
+midend::Value* create_type_tran(midend::IRBuilder& builder,
+                                midend::Value* input, DataType des_type) {
+    if (!input) return nullptr;
+    midend::Context* ctx = builder.getContext();
+    midend::Type* input_type = input->getType();
+    if (input_type->isFloatType()) {
+        switch (des_type) {
+            case DATA_INT:
+                return builder.createCast(midend::CastInst::CastOps::FPToSI,
+                                          input, get_ir_type(ctx, DATA_INT),
+                                          std::to_string(var_idx++));
+            case DATA_FLOAT:
+                return input;
+            default:
+                return input;
+        }
+    } else if (input_type->getBitWidth() != 1) {
+        switch (des_type) {
+            case DATA_FLOAT:
+                return builder.createCast(midend::CastInst::CastOps::SIToFP,
+                                          input, get_ir_type(ctx, DATA_FLOAT),
+                                          std::to_string(var_idx++));
+            case DATA_BOOL:
+                return builder.createCast(midend::CastInst::CastOps::Trunc,
+                                          input, get_ir_type(ctx, DATA_BOOL),
+                                          std::to_string(var_idx++));
+            case DATA_INT:
+                return input;
+            default:
+                return input;
+        }
+    } else {
+        switch (des_type) {
+            case DATA_FLOAT: {
+                midend::Value* mid_value = builder.createCast(
+                    midend::CastInst::CastOps::SExt, input,
+                    get_ir_type(ctx, DATA_INT), std::to_string(var_idx++));
+                return builder.createCast(
+                    midend::CastInst::CastOps::SIToFP, mid_value,
+                    get_ir_type(ctx, DATA_FLOAT), std::to_string(var_idx++));
+            }
+            case DATA_INT: {
+                return builder.createCast(midend::CastInst::CastOps::SIToFP,
+                                          input, get_ir_type(ctx, DATA_INT),
+                                          std::to_string(var_idx++));
+            }
+            case DATA_BOOL:
+                return input;
+            default:
+                return input;
+        }
     }
 }
 
@@ -200,7 +254,7 @@ midend::Constant* process_array_init_list(ASTNodePtr init_list,
 void process_local_array_init_recursive(
     ASTNodePtr init_list, SymbolPtr symbol, midend::IRBuilder& builder,
     std::unordered_map<int, midend::Value*>& local_vars,
-    std::unordered_map<int, midend::Value*>& init_values, int& current_pos,
+    std::map<int, midend::Value*>& init_values, int& current_pos,
     int current_dim) {
     if (!init_list) return;
 
@@ -250,8 +304,10 @@ void process_local_array_init_recursive(
                 }
 
                 if (consider) {
-                    midend::Value* init_val = translate_node(
-                        child, builder, nullptr, local_vars, symbol->data_type);
+                    midend::Value* init_val =
+                        translate_node(child, builder, nullptr, local_vars);
+                    init_val =
+                        create_type_tran(builder, init_val, symbol->data_type);
                     if (init_val) init_values[current_pos] = init_val;
                 }
                 current_pos++;
@@ -330,7 +386,7 @@ void initialize_array_elements(
     builder.setInsertPoint(mergeBB);
 
     // 处理初始化列表
-    std::unordered_map<int, midend::Value*> init_values;
+    std::map<int, midend::Value*> init_values;
     if (init_list) {
         int current_pos = 0;
         process_local_array_init_recursive(init_list, symbol, builder,
@@ -458,17 +514,17 @@ midend::Value* def_var(midend::IRBuilder& builder, SymbolPtr symbol,
 // 递归处理AST节点的函数（处理函数内部的语句）
 midend::Value* translate_node(
     ASTNodePtr node, midend::IRBuilder& builder, midend::Function* current_func,
-    std::unordered_map<int, midend::Value*>& local_vars, DataType need_type) {
+    std::unordered_map<int, midend::Value*>& local_vars) {
     if (!node) return nullptr;
+    // midend::Context* ctx = builder.getContext();
 
     switch (node->node_type) {
         case NODE_LIST: {
             // 列表节点，处理所有子节点
             midend::Value* last_value = nullptr;
             for (int i = 0; i < node->child_count; ++i) {
-                last_value =
-                    translate_node(node->children[i], builder, current_func,
-                                   local_vars, need_type);
+                last_value = translate_node(node->children[i], builder,
+                                            current_func, local_vars);
                 if (node->children[i]->node_type == NODE_BREAK_STMT ||
                     node->children[i]->node_type == NODE_CONTINUE_STMT ||
                     node->children[i]->node_type == NODE_RETURN_STMT)
@@ -478,27 +534,13 @@ midend::Value* translate_node(
         }
 
         case NODE_CONST: {
-            DataType final_type;
-            int int_const;
-            float float_const;
             if (node->data_type == NODEDATA_INT) {
-                int_const = node->data.direct_int;
-                float_const = (float)node->data.direct_int;
-                final_type = DATA_INT;
+                return builder.getInt32(node->data.direct_int);
             } else if (node->data_type == NODEDATA_FLOAT) {
-                int_const = (int)node->data.direct_float;
-                float_const = node->data.direct_float;
-                final_type = DATA_FLOAT;
-            } else
+                return builder.getFloat(node->data.direct_float);
+            } else {
                 return nullptr;
-            if (need_type == DATA_INT || need_type == DATA_FLOAT)
-                final_type = need_type;
-            if (final_type == DATA_INT)
-                return builder.getInt32(int_const);
-            else if (final_type == DATA_FLOAT)
-                return builder.getFloat(float_const);
-            else
-                return nullptr;
+            }
         }
 
         case NODE_VAR:
@@ -543,9 +585,9 @@ midend::Value* translate_node(
 
             std::vector<midend::Value*> indices;
             for (int i = 0; i < node->child_count; ++i) {
-                midend::Value* index =
-                    translate_node(node->children[i], builder, current_func,
-                                   local_vars, DATA_INT);
+                midend::Value* index = translate_node(
+                    node->children[i], builder, current_func, local_vars);
+                index = create_type_tran(builder, index, DATA_INT);
                 if (!index) return nullptr;
                 indices.push_back(index);
             }
@@ -567,9 +609,10 @@ midend::Value* translate_node(
             std::vector<midend::Value*> params;
             for (int i = 0; i < node->child_count; ++i) {
                 SymbolPtr param_symb = func_sym->attributes.func_info.params[i];
-                midend::Value* param_val =
-                    translate_node(node->children[i], builder, current_func,
-                                   local_vars, param_symb->data_type);
+                midend::Value* param_val = translate_node(
+                    node->children[i], builder, current_func, local_vars);
+                param_val =
+                    create_type_tran(builder, param_val, param_symb->data_type);
                 if (!param_val) return nullptr;
                 params.push_back(param_val);
             }
@@ -595,18 +638,11 @@ midend::Value* translate_node(
                 std::string current_block_id = std::to_string(block_idx++);
 
                 // 先计算左操作数
-                midend::Value* left =
-                    translate_node(node->children[0], builder, current_func,
-                                   local_vars, DATA_INT);
+                midend::Value* left = translate_node(node->children[0], builder,
+                                                     current_func, local_vars);
+                midend::Value* left_cond =
+                    create_type_tran(builder, left, DATA_BOOL);
                 if (!left) return nullptr;
-
-                // 如果左操作数不是 i1 类型，需要转换
-                midend::Value* left_cond = left;
-                if (left->getType()->getBitWidth() != 1) {
-                    left_cond = builder.createICmpNE(
-                        left, builder.getInt32(0),
-                        "tobool." + std::to_string(var_idx++));
-                }
 
                 // 创建用于短路求值的基本块
                 midend::BasicBlock* rhsBB = builder.createBasicBlock(
@@ -631,18 +667,11 @@ midend::Value* translate_node(
 
                 // 在右操作数基本块中计算右操作数
                 builder.setInsertPoint(rhsBB);
-                midend::Value* right =
-                    translate_node(node->children[1], builder, current_func,
-                                   local_vars, DATA_INT);
+                midend::Value* right = translate_node(
+                    node->children[1], builder, current_func, local_vars);
+                midend::Value* right_cond =
+                    create_type_tran(builder, right, DATA_INT);
                 if (!right) return nullptr;
-
-                // 如果右操作数不是 i1 类型，需要转换
-                midend::Value* right_cond = right;
-                if (right->getType()->getBitWidth() != 1) {
-                    right_cond = builder.createICmpNE(
-                        right, builder.getInt32(0),
-                        "tobool." + std::to_string(var_idx++));
-                }
 
                 builder.createBr(mergeBB);
                 rhsBB = builder.getInsertBlock();  // 可能已经改变
@@ -666,14 +695,20 @@ midend::Value* translate_node(
                 return phi;
             } else {
                 // 对于其他二元运算符，正常计算两个操作数
-                midend::Value* left =
-                    translate_node(node->children[0], builder, current_func,
-                                   local_vars, need_type);
-                midend::Value* right =
-                    translate_node(node->children[1], builder, current_func,
-                                   local_vars, need_type);
-
+                midend::Value* left = translate_node(node->children[0], builder,
+                                                     current_func, local_vars);
+                midend::Value* right = translate_node(
+                    node->children[1], builder, current_func, local_vars);
                 if (!left || !right) return nullptr;
+
+                // 强制类型转换
+                bool left_is_float = left->getType()->isFloatType();
+                bool right_is_float = right->getType()->isFloatType();
+                if (!left_is_float && right_is_float)
+                    left = create_type_tran(builder, left, DATA_FLOAT);
+                else if (left_is_float && !right_is_float)
+                    right = create_type_tran(builder, right, DATA_FLOAT);
+
                 return create_binary_op(builder, left, right, op_name);
             }
         }
@@ -682,9 +717,8 @@ midend::Value* translate_node(
             // 一元操作节点
             if (node->child_count < 1) return nullptr;
 
-            midend::Value* operand =
-                translate_node(node->children[0], builder, current_func,
-                               local_vars, need_type);
+            midend::Value* operand = translate_node(node->children[0], builder,
+                                                    current_func, local_vars);
             if (!operand) return nullptr;
 
             std::string op_name = node->name ? node->name : "";
@@ -692,14 +726,21 @@ midend::Value* translate_node(
             if (op_name == "+")
                 return operand;
             else if (op_name == "-") {
-                return builder.createSub(builder.getInt32(0), operand,
-                                         "neg." + std::to_string(var_idx++));
-            } else if (op_name == "!") {
-                // 如果操作数是 i32，直接用 icmp eq 0 实现逻辑非
                 if (operand->getType()->getBitWidth() != 1) {
-                    return builder.createICmpEQ(
+                    return builder.createSub(
+                        builder.getInt32(0), operand,
+                        "neg." + std::to_string(var_idx++));
+                } else {
+                    // int1取反，真值不变
+                    return operand;
+                }
+            } else if (op_name == "!") {
+                if (operand->getType()->getBitWidth() != 1) {
+                    // 如果操作数是 i32，直接用 icmp eq 0 实现逻辑非
+                    midend::Value* result = builder.createICmpEQ(
                         operand, builder.getInt32(0),
                         "not." + std::to_string(var_idx++));
+                    return create_type_tran(builder, result, DATA_INT);
                 } else {
                     // 如果已经是 i1 类型，使用 icmp eq 与 false 比较
                     return builder.createICmpEQ(
@@ -743,7 +784,8 @@ midend::Value* translate_node(
                 for (int i = 0; i < left_node->child_count; ++i) {
                     midend::Value* index =
                         translate_node(left_node->children[i], builder,
-                                       current_func, local_vars, DATA_INT);
+                                       current_func, local_vars);
+                    index = create_type_tran(builder, index, DATA_INT);
                     if (!index) return nullptr;
                     indices.push_back(index);
                 }
@@ -752,9 +794,9 @@ midend::Value* translate_node(
             }
 
             // 右值（表达式）
-            midend::Value* right_value =
-                translate_node(node->children[1], builder, current_func,
-                               local_vars, left_type);
+            midend::Value* right_value = translate_node(
+                node->children[1], builder, current_func, local_vars);
+            right_value = create_type_tran(builder, right_value, left_type);
             if (!right_value) return nullptr;
             if (left_ptr) builder.createStore(right_value, left_ptr);
             return right_value;
@@ -762,15 +804,18 @@ midend::Value* translate_node(
 
         case NODE_RETURN_STMT: {
             // 返回语句
+            DataType return_type = DATA_UNKNOWN;
+            if (node->data_type == NODEDATA_SYMB && node->data.symb_ptr)
+                return_type = node->data.symb_ptr->data_type;
             if (node->child_count > 0) {
-                midend::Value* return_value =
-                    translate_node(node->children[0], builder, current_func,
-                                   local_vars, need_type);
-                if (return_value) {
-                    builder.createRet(return_value);
-                } else {
+                midend::Value* return_value = translate_node(
+                    node->children[0], builder, current_func, local_vars);
+                if (!return_value) {
                     builder.createRetVoid();
                 }
+                return_value =
+                    create_type_tran(builder, return_value, return_type);
+                builder.createRet(return_value);
             } else {
                 builder.createRetVoid();
             }
@@ -796,9 +841,9 @@ midend::Value* translate_node(
 
             // 如果有初始化值（第一个子节点是常量或表达式）
             if (node->child_count > 0) {
-                midend::Value* init_value =
-                    translate_node(node->children[0], builder, current_func,
-                                   local_vars, symbol->data_type);
+                midend::Value* init_value = translate_node(
+                    node->children[0], builder, current_func, local_vars);
+                create_type_tran(builder, init_value, symbol->data_type);
                 if (init_value) {
                     builder.createStore(init_value, alloca);
                 }
@@ -840,8 +885,9 @@ midend::Value* translate_node(
             std::string current_block_id = std::to_string(block_idx++);
 
             // 计算条件表达式
-            midend::Value* cond = translate_node(
-                node->children[0], builder, current_func, local_vars, DATA_INT);
+            midend::Value* cond = translate_node(node->children[0], builder,
+                                                 current_func, local_vars);
+            cond = create_type_tran(builder, cond, DATA_BOOL);
             if (!cond) return nullptr;
             midend::BasicBlock* block_after_cond = builder.getInsertBlock();
 
@@ -849,8 +895,8 @@ midend::Value* translate_node(
             midend::BasicBlock* thenBB = builder.createBasicBlock(
                 "if." + current_block_id + ".then", current_func);
             builder.setInsertPoint(thenBB);
-            translate_node(node->children[1], builder, current_func, local_vars,
-                           need_type);
+            translate_node(node->children[1], builder, current_func,
+                           local_vars);
             midend::BasicBlock* block_after_then = builder.getInsertBlock();
 
             // merge基本块
@@ -878,8 +924,9 @@ midend::Value* translate_node(
             std::string current_block_id = std::to_string(block_idx++);
 
             // 计算条件表达式
-            midend::Value* cond = translate_node(
-                node->children[0], builder, current_func, local_vars, DATA_INT);
+            midend::Value* cond = translate_node(node->children[0], builder,
+                                                 current_func, local_vars);
+            cond = create_type_tran(builder, cond, DATA_BOOL);
             if (!cond) return nullptr;
             midend::BasicBlock* block_after_cond = builder.getInsertBlock();
 
@@ -887,16 +934,16 @@ midend::Value* translate_node(
             midend::BasicBlock* thenBB = builder.createBasicBlock(
                 "if." + current_block_id + ".then", current_func);
             builder.setInsertPoint(thenBB);
-            translate_node(node->children[1], builder, current_func, local_vars,
-                           need_type);
+            translate_node(node->children[1], builder, current_func,
+                           local_vars);
             midend::BasicBlock* block_after_then = builder.getInsertBlock();
 
             // else基本块
             midend::BasicBlock* elseBB = builder.createBasicBlock(
                 "if." + current_block_id + ".else", current_func);
             builder.setInsertPoint(elseBB);
-            translate_node(node->children[2], builder, current_func, local_vars,
-                           need_type);
+            translate_node(node->children[2], builder, current_func,
+                           local_vars);
             midend::BasicBlock* block_after_else = builder.getInsertBlock();
 
             // 判断是否需要merge块
@@ -947,8 +994,9 @@ midend::Value* translate_node(
 
             // 计算条件表达式
             builder.setInsertPoint(condBB);
-            midend::Value* cond = translate_node(
-                node->children[0], builder, current_func, local_vars, DATA_INT);
+            midend::Value* cond = translate_node(node->children[0], builder,
+                                                 current_func, local_vars);
+            cond = create_type_tran(builder, cond, DATA_BOOL);
             if (!cond) return nullptr;
             midend::BasicBlock* block_after_cond = builder.getInsertBlock();
 
@@ -956,8 +1004,8 @@ midend::Value* translate_node(
             midend::BasicBlock* loopBB = builder.createBasicBlock(
                 "while." + current_block_id + ".loop", current_func);
             builder.setInsertPoint(loopBB);
-            translate_node(node->children[1], builder, current_func, local_vars,
-                           need_type);
+            translate_node(node->children[1], builder, current_func,
+                           local_vars);
             if (!in_break_continue_pos(builder.getInsertBlock()))
                 builder.createBr(condBB);
 
@@ -1007,9 +1055,8 @@ midend::Value* translate_node(
             // 处理其他节点类型
             midend::Value* last_value = nullptr;
             for (int i = 0; i < node->child_count; ++i) {
-                last_value =
-                    translate_node(node->children[i], builder, current_func,
-                                   local_vars, need_type);
+                last_value = translate_node(node->children[i], builder,
+                                            current_func, local_vars);
                 if (node->children[i]->node_type == NODE_BREAK_STMT ||
                     node->children[i]->node_type == NODE_CONTINUE_STMT ||
                     node->children[i]->node_type == NODE_RETURN_STMT)
@@ -1109,8 +1156,7 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
     }
 
     // 处理函数体
-    translate_node(node->children[1], builder, func, func_local_vars,
-                   DATA_UNKNOWN);
+    translate_node(node->children[1], builder, func, func_local_vars);
 
     // 如果没有显式的return语句，添加一个
     if (!builder.getInsertBlock()->getTerminator()) {

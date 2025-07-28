@@ -281,8 +281,18 @@ Stmt:
     }
     | BREAK ';' { $$ = create_ast_node(NODE_BREAK_STMT, NULL, yylineno, 0); }
     | CONTINUE ';' { $$ = create_ast_node(NODE_CONTINUE_STMT, NULL, yylineno, 0); }
-    | RETURN ';' { $$ = create_ast_node(NODE_RETURN_STMT, NULL, yylineno, 0); }
-    | RETURN Exp ';' { $$ = create_ast_node(NODE_RETURN_STMT, NULL, yylineno, 1, $2); }
+    | RETURN ';' {
+        NodeData data;
+        data.symb_ptr = get_current_function_scope();
+        $$ = create_ast_node(NODE_RETURN_STMT, data.symb_ptr->name, yylineno, 0);
+        set_ast_node_data($$, HOLD_NODETYPE, NULL, data, NODEDATA_SYMB, -1);
+    }
+    | RETURN Exp ';' {
+        NodeData data;
+        data.symb_ptr = get_current_function_scope();
+        $$ = create_ast_node(NODE_RETURN_STMT, data.symb_ptr->name, yylineno, 1, $2);
+        set_ast_node_data($$, HOLD_NODETYPE, NULL, data, NODEDATA_SYMB, -1);
+    }
     ;
 
 Cond:

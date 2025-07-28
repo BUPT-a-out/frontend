@@ -7,7 +7,7 @@ Parsing completed successfully.
 |   |   +-- LIST: Block
 |   |   |   +-- VAR_DEF: a (sym: a, id: 25)
 |   |   |   |   +-- CONST (int value: 5)
-|   |   |   +-- RETURN_STMT
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
 |   |   |   |   +-- VAR (sym: a, id: 25)
 
 --- Permanent Symbol Table ---

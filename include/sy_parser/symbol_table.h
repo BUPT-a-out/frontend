@@ -115,6 +115,7 @@ void enter_scope();
 void exit_scope();
 void enter_function(SymbolPtr func_symb);
 void exit_function();
+SymbolPtr get_current_function_scope();
 int get_current_scope_level();
 
 // Symbol Definition (add symbol to both symbol table and scope table)

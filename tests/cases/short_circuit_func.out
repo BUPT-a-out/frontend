@@ -7,7 +7,7 @@ Parsing completed successfully.
 |   |   |   +-- VAR_DEF: a (sym: a, id: 25)
 |   |   |   +-- VAR_DEF: b (sym: b, id: 26)
 |   |   +-- LIST: Block
-|   |   |   +-- RETURN_STMT
+|   |   |   +-- RETURN_STMT: sum (sym: sum, id: 24)
 |   |   |   |   +-- BINARY_OP: +
 |   |   |   |   |   +-- VAR (sym: a, id: 25)
 |   |   |   |   |   +-- VAR (sym: b, id: 26)
@@ -34,7 +34,7 @@ Parsing completed successfully.
 |   |   |   |   |   +-- ASSIGN_STMT
 |   |   |   |   |   |   +-- VAR (sym: result, id: 31)
 |   |   |   |   |   |   +-- CONST (int value: 1)
-|   |   |   +-- RETURN_STMT
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 27)
 |   |   |   |   +-- VAR (sym: result, id: 31)
 
 --- Permanent Symbol Table ---
@@ -100,30 +100,28 @@ main.entry:
   store i32 5, i32* %x.30
   store i32 0, i32* %result.31
   %3 = load i32, i32* %x.30
-  %tobool.4 = icmp ne i32 %3, 0
-  br i1 %tobool.4, label %and.2.rhs, label %and.2.merge
+  %4 = trunc i32 %3 to i1
+  br i1 %4, label %and.2.rhs, label %and.2.merge
 and.2.rhs:
   %5 = load i32, i32* %b.29
-  %tobool.6 = icmp ne i32 %5, 0
   br label %and.2.merge
 and.2.merge:
-  %and.2.result = phi i1 [ 0, %main.entry ], [ %tobool.6, %and.2.rhs ]
+  %and.2.result = phi i1 [ 0, %main.entry ], [ %5, %and.2.rhs ]
   br i1 %and.2.result, label %or.1.merge, label %or.1.rhs
 or.1.rhs:
-  %7 = load i32, i32* %a.28
-  %8 = load i32, i32* %b.29
-  %9 = call i32 @sum(i32 %7, i32 %8)
-  %tobool.10 = icmp ne i32 %9, 0
+  %6 = load i32, i32* %a.28
+  %7 = load i32, i32* %b.29
+  %8 = call i32 @sum(i32 %6, i32 %7)
   br label %or.1.merge
 or.1.merge:
-  %or.1.result = phi i1 [ 1, %and.2.merge ], [ %tobool.10, %or.1.rhs ]
+  %or.1.result = phi i1 [ 1, %and.2.merge ], [ %8, %or.1.rhs ]
   br i1 %or.1.result, label %if.0.then, label %if.0.merge
 if.0.then:
   store i32 1, i32* %result.31
   br label %if.0.merge
 if.0.merge:
-  %11 = load i32, i32* %result.31
-  ret i32 %11
+  %9 = load i32, i32* %result.31
+  ret i32 %9
 }
 
 

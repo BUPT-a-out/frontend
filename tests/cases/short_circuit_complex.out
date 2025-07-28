@@ -7,7 +7,7 @@ Parsing completed successfully.
 |   |   |   +-- VAR_DEF: a (sym: a, id: 25)
 |   |   |   +-- VAR_DEF: b (sym: b, id: 26)
 |   |   +-- LIST: Block
-|   |   |   +-- RETURN_STMT
+|   |   |   +-- RETURN_STMT: sum (sym: sum, id: 24)
 |   |   |   |   +-- BINARY_OP: +
 |   |   |   |   |   +-- VAR (sym: a, id: 25)
 |   |   |   |   |   +-- VAR (sym: b, id: 26)
@@ -41,7 +41,7 @@ Parsing completed successfully.
 |   |   |   |   |   +-- ASSIGN_STMT
 |   |   |   |   |   |   +-- VAR (sym: result, id: 32)
 |   |   |   |   |   |   +-- CONST (int value: 1)
-|   |   |   +-- RETURN_STMT
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 27)
 |   |   |   |   +-- VAR (sym: result, id: 32)
 
 --- Permanent Symbol Table ---
@@ -110,49 +110,48 @@ main.entry:
   store i32 4, i32* %d.31
   store i32 0, i32* %result.32
   %3 = load i32, i32* %a.28
-  %tobool.4 = icmp ne i32 %3, 0
-  br i1 %tobool.4, label %and.3.rhs, label %and.3.merge
+  %4 = trunc i32 %3 to i1
+  br i1 %4, label %and.3.rhs, label %and.3.merge
 and.3.rhs:
   %5 = load i32, i32* %b.29
-  %tobool.6 = icmp ne i32 %5, 0
   br label %and.3.merge
 and.3.merge:
-  %and.3.result = phi i1 [ 0, %main.entry ], [ %tobool.6, %and.3.rhs ]
+  %and.3.result = phi i1 [ 0, %main.entry ], [ %5, %and.3.rhs ]
   br i1 %and.3.result, label %or.2.merge, label %or.2.rhs
 or.2.rhs:
-  %7 = load i32, i32* %c.30
-  %tobool.8 = icmp ne i32 %7, 0
+  %6 = load i32, i32* %c.30
   br label %or.2.merge
 or.2.merge:
-  %or.2.result = phi i1 [ 1, %and.3.merge ], [ %tobool.8, %or.2.rhs ]
+  %or.2.result = phi i1 [ 1, %and.3.merge ], [ %6, %or.2.rhs ]
   br i1 %or.2.result, label %or.1.merge, label %or.1.rhs
 or.1.rhs:
-  %9 = load i32, i32* %d.31
-  %tobool.10 = icmp ne i32 %9, 0
-  br i1 %tobool.10, label %and.5.rhs, label %and.5.merge
+  %7 = load i32, i32* %d.31
+  %8 = trunc i32 %7 to i1
+  br i1 %8, label %and.5.rhs, label %and.5.merge
 or.1.merge:
-  %or.1.result = phi i1 [ 1, %or.2.merge ], [ %and.4.result, %and.4.merge ]
+  %or.1.result = phi i1 [ 1, %or.2.merge ], [ %13, %and.4.merge ]
   br i1 %or.1.result, label %if.0.then, label %if.0.merge
 and.5.rhs:
-  %11 = load i32, i32* %a.28
-  %tobool.12 = icmp ne i32 %11, 0
+  %9 = load i32, i32* %a.28
   br label %and.5.merge
 and.5.merge:
-  %and.5.result = phi i1 [ 0, %or.1.rhs ], [ %tobool.12, %and.5.rhs ]
+  %and.5.result = phi i1 [ 0, %or.1.rhs ], [ %9, %and.5.rhs ]
   br i1 %and.5.result, label %and.4.rhs, label %and.4.merge
 and.4.rhs:
-  %13 = load i32, i32* %c.30
-  %not.14 = icmp eq i32 %13, 0
+  %10 = load i32, i32* %c.30
+  %not.11 = icmp eq i32 %10, 0
+  %12 = sitofp i1 %not.11 to i32
   br label %and.4.merge
 and.4.merge:
-  %and.4.result = phi i1 [ 0, %and.5.merge ], [ %not.14, %and.4.rhs ]
+  %and.4.result = phi i1 [ 0, %and.5.merge ], [ %12, %and.4.rhs ]
+  %13 = sitofp i1 %and.4.result to i32
   br label %or.1.merge
 if.0.then:
   store i32 1, i32* %result.32
   br label %if.0.merge
 if.0.merge:
-  %15 = load i32, i32* %result.32
-  ret i32 %15
+  %14 = load i32, i32* %result.32
+  ret i32 %14
 }
 
 

@@ -20,7 +20,7 @@ Parsing completed successfully.
 |   |   |   |   |   |   |   |   +-- CONST (int value: 1)
 |   |   |   |   |   |   |   |   +-- LIST: If-2
 |   |   |   |   |   |   |   |   +-- LIST: If-3
-|   |   |   +-- RETURN_STMT
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
 |   |   |   |   +-- CONST (int value: 0)
 
 --- Permanent Symbol Table ---
@@ -58,9 +58,11 @@ ID    Name                 Type            Data Type  Function             Shape
 
 define i32 @main() {
 main.entry:
-  br i1 1, label %if.0.then, label %if.0.else
+  %0 = trunc i32 1 to i1
+  br i1 %0, label %if.0.then, label %if.0.else
 if.0.then:
-  br i1 1, label %if.1.then, label %if.1.else
+  %1 = trunc i32 1 to i1
+  br i1 %1, label %if.1.then, label %if.1.else
 if.1.then:
   br label %if.1.merge
 if.1.else:
@@ -70,9 +72,11 @@ if.1.merge:
 if.0.else:
   br label %while.2.cond
 while.2.cond:
-  br i1 0, label %while.2.loop, label %while.2.merge
+  %2 = trunc i32 0 to i1
+  br i1 %2, label %while.2.loop, label %while.2.merge
 while.2.loop:
-  br i1 1, label %if.3.then, label %if.3.else
+  %3 = trunc i32 1 to i1
+  br i1 %3, label %if.3.then, label %if.3.else
 if.3.then:
   br label %if.3.merge
 if.3.else:
