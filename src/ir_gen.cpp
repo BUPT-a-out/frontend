@@ -611,8 +611,10 @@ midend::Value* translate_node(
                 SymbolPtr param_symb = func_sym->attributes.func_info.params[i];
                 midend::Value* param_val = translate_node(
                     node->children[i], builder, current_func, local_vars);
-                param_val =
-                    create_type_tran(builder, param_val, param_symb->data_type);
+                if (param_symb->symbol_type == SYMB_VAR ||
+                    param_symb->symbol_type == SYMB_CONST_VAR)
+                    param_val = create_type_tran(builder, param_val,
+                                                 param_symb->data_type);
                 if (!param_val) return nullptr;
                 params.push_back(param_val);
             }
