@@ -104,24 +104,26 @@ main.entry:
   br i1 %4, label %and.2.rhs, label %and.2.merge
 and.2.rhs:
   %5 = load i32, i32* %b.29
+  %6 = trunc i32 %5 to i1
   br label %and.2.merge
 and.2.merge:
-  %and.2.result = phi i1 [ 0, %main.entry ], [ %5, %and.2.rhs ]
+  %and.2.result = phi i1 [ 0, %main.entry ], [ %6, %and.2.rhs ]
   br i1 %and.2.result, label %or.1.merge, label %or.1.rhs
 or.1.rhs:
-  %6 = load i32, i32* %a.28
-  %7 = load i32, i32* %b.29
-  %8 = call i32 @sum(i32 %6, i32 %7)
+  %7 = load i32, i32* %a.28
+  %8 = load i32, i32* %b.29
+  %9 = call i32 @sum(i32 %7, i32 %8)
+  %10 = trunc i32 %9 to i1
   br label %or.1.merge
 or.1.merge:
-  %or.1.result = phi i1 [ 1, %and.2.merge ], [ %8, %or.1.rhs ]
+  %or.1.result = phi i1 [ 1, %and.2.merge ], [ %10, %or.1.rhs ]
   br i1 %or.1.result, label %if.0.then, label %if.0.merge
 if.0.then:
   store i32 1, i32* %result.31
   br label %if.0.merge
 if.0.merge:
-  %9 = load i32, i32* %result.31
-  ret i32 %9
+  %11 = load i32, i32* %result.31
+  ret i32 %11
 }
 
 

@@ -715,7 +715,7 @@ midend::Value* translate_node(
                     translate_node(node->children[1], builder, current_func,
                                    local_vars, DATA_BOOL);
                 midend::Value* right_cond =
-                    create_type_tran(builder, right, DATA_INT);
+                    create_type_tran(builder, right, DATA_BOOL);
                 if (!right) return nullptr;
 
                 builder.createBr(mergeBB);
