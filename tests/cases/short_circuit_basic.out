@@ -83,46 +83,40 @@ main.entry:
   store i32 1, i32* %b.26
   store i32 0, i32* %result.27
   %0 = load i32, i32* %a.25
-  %1 = trunc i32 %0 to i1
-  br i1 %1, label %and.1.rhs, label %and.1.merge
+  br i1 %0, label %and.1.rhs, label %and.1.merge
 and.1.rhs:
-  %2 = load i32, i32* %b.26
-  %3 = trunc i32 %2 to i1
+  %1 = load i32, i32* %b.26
   br label %and.1.merge
 and.1.merge:
-  %and.1.result = phi i1 [ 0, %main.entry ], [ %3, %and.1.rhs ]
+  %and.1.result = phi i1 [ 0, %main.entry ], [ %1, %and.1.rhs ]
   br i1 %and.1.result, label %if.0.then, label %if.0.merge
 if.0.then:
   store i32 1, i32* %result.27
   br label %if.0.merge
 if.0.merge:
-  %4 = load i32, i32* %b.26
-  %5 = trunc i32 %4 to i1
-  br i1 %5, label %or.3.merge, label %or.3.rhs
+  %2 = load i32, i32* %b.26
+  br i1 %2, label %or.3.merge, label %or.3.rhs
 or.3.rhs:
-  %6 = load i32, i32* %a.25
-  %7 = trunc i32 %6 to i1
+  %3 = load i32, i32* %a.25
   br label %or.3.merge
 or.3.merge:
-  %or.3.result = phi i1 [ 1, %if.0.merge ], [ %7, %or.3.rhs ]
+  %or.3.result = phi i1 [ 1, %if.0.merge ], [ %3, %or.3.rhs ]
   br i1 %or.3.result, label %if.2.then, label %if.2.merge
 if.2.then:
-  %8 = load i32, i32* %result.27
-  %add.9 = add i32 %8, 10
-  store i32 %add.9, i32* %result.27
+  %4 = load i32, i32* %result.27
+  %add.5 = add i32 %4, 10
+  store i32 %add.5, i32* %result.27
   br label %if.2.merge
 if.2.merge:
-  %10 = load i32, i32* %result.27
-  %not.11 = icmp eq i32 %10, 0
-  %12 = sitofp i1 %not.11 to i32
-  %13 = trunc i32 %12 to i1
-  br i1 %13, label %if.4.then, label %if.4.merge
+  %6 = load i32, i32* %result.27
+  %not.7 = icmp eq i32 %6, 0
+  br i1 %not.7, label %if.4.then, label %if.4.merge
 if.4.then:
-  %14 = load i32, i32* %b.26
-  ret i32 %14
+  %8 = load i32, i32* %b.26
+  ret i32 %8
 if.4.merge:
-  %15 = load i32, i32* %result.27
-  ret i32 %15
+  %9 = load i32, i32* %result.27
+  ret i32 %9
 }
 
 

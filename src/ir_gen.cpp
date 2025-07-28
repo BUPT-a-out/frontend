@@ -142,12 +142,10 @@ midend::Value* get_type_value(midend::IRBuilder& builder, ASTNodePtr const_node,
         int_const = (int)const_node->data.direct_float;
         float_const = const_node->data.direct_float;
     }
-    if (des_type == DATA_INT) {
+    if (des_type == DATA_INT || des_type == DATA_BOOL) {
         return builder.getInt32(int_const);
     } else if (des_type == DATA_FLOAT) {
         return builder.getFloat(float_const);
-    } else if (des_type == DATA_BOOL) {
-        return builder.getInt1(int_const != 0);
     } else if (const_node->data_type == NODEDATA_INT) {
         return builder.getInt32(int_const);
     } else if (const_node->data_type == NODEDATA_FLOAT) {
@@ -170,11 +168,8 @@ midend::Value* create_type_tran(midend::IRBuilder& builder,
                                               input,
                                               get_ir_type(ctx, DATA_FLOAT),
                                               std::to_string(var_idx++));
-                case DATA_BOOL:
-                    return builder.createCast(
-                        midend::CastInst::CastOps::Trunc, input,
-                        get_ir_type(ctx, DATA_BOOL), std::to_string(var_idx++));
                 case DATA_INT:
+                case DATA_BOOL:
                     return input;
                 default:
                     return input;
@@ -182,19 +177,12 @@ midend::Value* create_type_tran(midend::IRBuilder& builder,
         } else {
             switch (des_type) {
                 case DATA_FLOAT: {
-                    midend::Value* mid_value = builder.createCast(
-                        midend::CastInst::CastOps::SExt, input,
-                        get_ir_type(ctx, DATA_INT), std::to_string(var_idx++));
                     return builder.createCast(midend::CastInst::CastOps::SIToFP,
-                                              mid_value,
+                                              input,
                                               get_ir_type(ctx, DATA_FLOAT),
                                               std::to_string(var_idx++));
                 }
-                case DATA_INT: {
-                    return builder.createCast(midend::CastInst::CastOps::SIToFP,
-                                              input, get_ir_type(ctx, DATA_INT),
-                                              std::to_string(var_idx++));
-                }
+                case DATA_INT:
                 case DATA_BOOL:
                     return input;
                 default:
@@ -204,6 +192,7 @@ midend::Value* create_type_tran(midend::IRBuilder& builder,
     } else if (input_type->isFloatType()) {
         switch (des_type) {
             case DATA_INT:
+            case DATA_BOOL:
                 return builder.createCast(midend::CastInst::CastOps::FPToSI,
                                           input, get_ir_type(ctx, DATA_INT),
                                           std::to_string(var_idx++));
