@@ -326,6 +326,9 @@ void process_local_array_init_recursive(
         } else {
             // 扁平初始化元素
             if (current_pos < array_info.elem_num) {
+                // 每次循环必须经过current_pos自增
+                current_pos++;
+
                 if (child->node_type == NODE_CONST) {
                     // 只考虑不为0的常数
                     if (child->data_type == NODEDATA_INT &&
@@ -342,8 +345,7 @@ void process_local_array_init_recursive(
                                           symbol->data_type);
                 init_val =
                     create_type_tran(builder, init_val, symbol->data_type);
-                if (init_val) init_values[current_pos] = init_val;
-                current_pos++;
+                if (init_val) init_values[current_pos - 1] = init_val;
             }
         }
     }
