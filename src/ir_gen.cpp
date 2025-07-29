@@ -841,9 +841,8 @@ midend::Value* translate_node(
                 return operand;
             else if (op_name == "-") {
                 if (operand->getType()->getBitWidth() != 1) {
-                    return builder.createSub(
-                        builder.getInt32(0), operand,
-                        "neg." + std::to_string(var_idx++));
+                    return builder.createUSub(
+                        operand, "neg." + std::to_string(var_idx++));
                 } else {
                     // int1取反，真值不变
                     return operand;
