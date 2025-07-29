@@ -446,39 +446,94 @@ void initialize_array_elements(
 
 midend::Value* create_binary_op(midend::IRBuilder& builder, midend::Value* left,
                                 midend::Value* right, std::string op_name) {
+    // 检查操作数类型以决定生成整数还是浮点指令
+    bool is_float_op =
+        left->getType()->isFloatType() || right->getType()->isFloatType();
+
     if (op_name == "+") {
-        return builder.createAdd(left, right,
-                                 "add." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFAdd(left, right,
+                                      "fadd." + std::to_string(var_idx++));
+        } else {
+            return builder.createAdd(left, right,
+                                     "add." + std::to_string(var_idx++));
+        }
     } else if (op_name == "-") {
-        return builder.createSub(left, right,
-                                 "sub." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFSub(left, right,
+                                      "fsub." + std::to_string(var_idx++));
+        } else {
+            return builder.createSub(left, right,
+                                     "sub." + std::to_string(var_idx++));
+        }
     } else if (op_name == "*") {
-        return builder.createMul(left, right,
-                                 "mul." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFMul(left, right,
+                                      "fmul." + std::to_string(var_idx++));
+        } else {
+            return builder.createMul(left, right,
+                                     "mul." + std::to_string(var_idx++));
+        }
     } else if (op_name == "/") {
-        return builder.createDiv(left, right,
-                                 "div." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFDiv(left, right,
+                                      "fdiv." + std::to_string(var_idx++));
+        } else {
+            return builder.createDiv(left, right,
+                                     "div." + std::to_string(var_idx++));
+        }
     } else if (op_name == "%") {
+        // 取模运算只适用于整数
         return builder.createRem(left, right,
                                  "rem." + std::to_string(var_idx++));
     } else if (op_name == "<") {
-        return builder.createICmpSLT(left, right,
-                                     "lt." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFCmpOLT(left, right,
+                                         "flt." + std::to_string(var_idx++));
+        } else {
+            return builder.createICmpSLT(left, right,
+                                         "lt." + std::to_string(var_idx++));
+        }
     } else if (op_name == "<=") {
-        return builder.createICmpSLE(left, right,
-                                     "le." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFCmpOLE(left, right,
+                                         "fle." + std::to_string(var_idx++));
+        } else {
+            return builder.createICmpSLE(left, right,
+                                         "le." + std::to_string(var_idx++));
+        }
     } else if (op_name == ">") {
-        return builder.createICmpSGT(left, right,
-                                     "gt." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFCmpOGT(left, right,
+                                         "fgt." + std::to_string(var_idx++));
+        } else {
+            return builder.createICmpSGT(left, right,
+                                         "gt." + std::to_string(var_idx++));
+        }
     } else if (op_name == ">=") {
-        return builder.createICmpSGE(left, right,
-                                     "ge." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFCmpOGE(left, right,
+                                         "fge." + std::to_string(var_idx++));
+        } else {
+            return builder.createICmpSGE(left, right,
+                                         "ge." + std::to_string(var_idx++));
+        }
     } else if (op_name == "==") {
-        return builder.createICmpEQ(left, right,
-                                    "eq." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFCmpOEQ(left, right,
+                                         "feq." + std::to_string(var_idx++));
+        } else {
+            return builder.createICmpEQ(left, right,
+                                        "eq." + std::to_string(var_idx++));
+        }
     } else if (op_name == "!=") {
-        return builder.createICmpNE(left, right,
-                                    "ne." + std::to_string(var_idx++));
+        if (is_float_op) {
+            return builder.createFCmpONE(left, right,
+                                         "fne." + std::to_string(var_idx++));
+        } else {
+            return builder.createICmpNE(left, right,
+                                        "ne." + std::to_string(var_idx++));
+        }
     } else
         return nullptr;
 }
@@ -752,14 +807,16 @@ midend::Value* translate_node(
 
                 // 强制类型转换
                 DataType des_type = DATA_INT;
-                if (!left_is_float && right_is_float) {
+                // 如果任一操作数是浮点类型，整个运算都应该是浮点类型
+                if (left_is_float || right_is_float) {
                     des_type = DATA_FLOAT;
-                    if (left)
+                    // 将非浮点操作数转换为浮点
+                    if (!left_is_float && left) {
                         left = create_type_tran(builder, left, DATA_FLOAT);
-                } else if (left_is_float && !right_is_float) {
-                    des_type = DATA_FLOAT;
-                    if (right)
+                    }
+                    if (!right_is_float && right) {
                         right = create_type_tran(builder, right, DATA_FLOAT);
+                    }
                 }
                 if (!left) left = get_type_value(builder, left_node, des_type);
                 if (!right)
