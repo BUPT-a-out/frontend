@@ -2,41 +2,41 @@ Parsing completed successfully.
 
 --- Abstract Syntax Tree ---
 +-- ROOT
-|   +-- FUNC_DEF: main (sym: main, id: 24)
+|   +-- FUNC_DEF: main (sym: main, id: 26)
 |   |   +-- LIST: FParams
 |   |   +-- LIST: Block
-|   |   |   +-- VAR_DEF: a (sym: a, id: 25)
+|   |   |   +-- VAR_DEF: a (sym: a, id: 27)
 |   |   |   |   +-- CONST (int value: 0)
-|   |   |   +-- VAR_DEF: b (sym: b, id: 26)
+|   |   |   +-- VAR_DEF: b (sym: b, id: 28)
 |   |   |   |   +-- CONST (int value: 1)
-|   |   |   +-- VAR_DEF: result (sym: result, id: 27)
+|   |   |   +-- VAR_DEF: result (sym: result, id: 29)
 |   |   |   |   +-- CONST (int value: 0)
 |   |   |   +-- IF_STMT
 |   |   |   |   +-- BINARY_OP: &&
-|   |   |   |   |   +-- VAR (sym: a, id: 25)
-|   |   |   |   |   +-- VAR (sym: b, id: 26)
+|   |   |   |   |   +-- VAR (sym: a, id: 27)
+|   |   |   |   |   +-- VAR (sym: b, id: 28)
 |   |   |   |   +-- LIST: If-2
 |   |   |   |   |   +-- ASSIGN_STMT
-|   |   |   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   |   |   +-- VAR (sym: result, id: 29)
 |   |   |   |   |   |   +-- CONST (int value: 1)
 |   |   |   +-- IF_STMT
 |   |   |   |   +-- BINARY_OP: ||
-|   |   |   |   |   +-- VAR (sym: b, id: 26)
-|   |   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   |   |   +-- VAR (sym: b, id: 28)
+|   |   |   |   |   +-- VAR (sym: a, id: 27)
 |   |   |   |   +-- LIST: If-2
 |   |   |   |   |   +-- ASSIGN_STMT
-|   |   |   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   |   |   +-- VAR (sym: result, id: 29)
 |   |   |   |   |   |   +-- BINARY_OP: +
-|   |   |   |   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   |   |   |   +-- VAR (sym: result, id: 29)
 |   |   |   |   |   |   |   +-- CONST (int value: 10)
 |   |   |   +-- IF_STMT
 |   |   |   |   +-- UNARY_OP: !
-|   |   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   |   +-- VAR (sym: result, id: 29)
 |   |   |   |   +-- LIST: If-2
-|   |   |   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
-|   |   |   |   |   |   +-- VAR (sym: b, id: 26)
-|   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
-|   |   |   |   +-- VAR (sym: result, id: 27)
+|   |   |   |   |   +-- RETURN_STMT: main (sym: main, id: 26)
+|   |   |   |   |   |   +-- VAR (sym: b, id: 28)
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 26)
+|   |   |   |   +-- VAR (sym: result, id: 29)
 
 --- Permanent Symbol Table ---
 ID    Name                 Type            Data Type  Function             Shape     
@@ -63,12 +63,14 @@ ID    Name                 Type            Data Type  Function             Shape
 19    putf                 function        void       N/A                  N/A       
 20    format_string        var             char       putf                 N/A       
 21    value                var             int        putf                 N/A       
-22    starttime            function        void       N/A                  N/A       
-23    stoptime             function        void       N/A                  N/A       
-24    main                 function        int        N/A                  N/A       
-25    a                    var             int        main                 N/A       
-26    b                    var             int        main                 N/A       
-27    result               var             int        main                 N/A       
+22    _sysy_starttime      function        void       N/A                  N/A       
+23    line                 var             int        _sysy_starttime      N/A       
+24    _sysy_stoptime       function        void       N/A                  N/A       
+25    line                 var             int        _sysy_stoptime       N/A       
+26    main                 function        int        N/A                  N/A       
+27    a                    var             int        main                 N/A       
+28    b                    var             int        main                 N/A       
+29    result               var             int        main                 N/A       
 -------------------------------------------------------------------------------------
 
 --- Generated IR ---
@@ -76,46 +78,46 @@ ID    Name                 Type            Data Type  Function             Shape
 
 define i32 @main() {
 main.entry:
-  %a.25 = alloca i32
-  %b.26 = alloca i32
-  %result.27 = alloca i32
-  store i32 0, i32* %a.25
-  store i32 1, i32* %b.26
-  store i32 0, i32* %result.27
-  %0 = load i32, i32* %a.25
+  %a.27 = alloca i32
+  %b.28 = alloca i32
+  %result.29 = alloca i32
+  store i32 0, i32* %a.27
+  store i32 1, i32* %b.28
+  store i32 0, i32* %result.29
+  %0 = load i32, i32* %a.27
   br i1 %0, label %and.1.rhs, label %and.1.merge
 and.1.rhs:
-  %1 = load i32, i32* %b.26
+  %1 = load i32, i32* %b.28
   br label %and.1.merge
 and.1.merge:
   %and.1.result = phi i1 [ 0, %main.entry ], [ %1, %and.1.rhs ]
   br i1 %and.1.result, label %if.0.then, label %if.0.merge
 if.0.then:
-  store i32 1, i32* %result.27
+  store i32 1, i32* %result.29
   br label %if.0.merge
 if.0.merge:
-  %2 = load i32, i32* %b.26
+  %2 = load i32, i32* %b.28
   br i1 %2, label %or.3.merge, label %or.3.rhs
 or.3.rhs:
-  %3 = load i32, i32* %a.25
+  %3 = load i32, i32* %a.27
   br label %or.3.merge
 or.3.merge:
   %or.3.result = phi i1 [ 1, %if.0.merge ], [ %3, %or.3.rhs ]
   br i1 %or.3.result, label %if.2.then, label %if.2.merge
 if.2.then:
-  %4 = load i32, i32* %result.27
+  %4 = load i32, i32* %result.29
   %add.5 = add i32 %4, 10
-  store i32 %add.5, i32* %result.27
+  store i32 %add.5, i32* %result.29
   br label %if.2.merge
 if.2.merge:
-  %6 = load i32, i32* %result.27
+  %6 = load i32, i32* %result.29
   %not.7 = icmp eq i32 %6, 0
   br i1 %not.7, label %if.4.then, label %if.4.merge
 if.4.then:
-  %8 = load i32, i32* %b.26
+  %8 = load i32, i32* %b.28
   ret i32 %8
 if.4.merge:
-  %9 = load i32, i32* %result.27
+  %9 = load i32, i32* %result.29
   ret i32 %9
 }
 

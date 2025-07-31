@@ -406,8 +406,20 @@ UnaryExp:
         }
         sym->attributes.func_info.call_count++;
         data.symb_ptr = sym;
-        set_ast_node_data($3, NODE_FUNC_CALL, $1, data, NODEDATA_SYMB, yylineno);
-        $$ = $3;
+        // 单独处理_sysy_starttime(__LINE__)和_sysy_stoptime(__LINE__)
+        if (strcmp($1, "_sysy_starttime") == 0 || strcmp($1, "_sysy_stoptime") == 0) {
+            NodeData line_node_data;
+            ASTNodePtr line_node;
+            line_node_data.direct_int = yylineno;
+            line_node = create_ast_node(NODE_CONST, "line", yylineno, 0);
+            set_ast_node_data(
+                line_node, HOLD_NODETYPE, NULL, line_node_data, NODEDATA_INT, yylineno);
+            $$ = create_ast_node(NODE_FUNC_CALL, $1, yylineno, 1, line_node);
+            set_ast_node_data($$, HOLD_NODETYPE, NULL, data, NODEDATA_SYMB, yylineno);
+        } else {
+            set_ast_node_data($3, NODE_FUNC_CALL, $1, data, NODEDATA_SYMB, yylineno);
+            $$ = $3;
+        }
     }
     ;
 

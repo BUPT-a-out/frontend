@@ -2,7 +2,7 @@ Parsing completed successfully.
 
 --- Abstract Syntax Tree ---
 +-- ROOT
-|   +-- ARRAY_DEF: a (sym: a, id: 24)
+|   +-- ARRAY_DEF: a (sym: a, id: 26)
 |   |   +-- LIST: ArrayIniter
 |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   +-- CONST (int value: 1)
@@ -13,10 +13,10 @@ Parsing completed successfully.
 |   |   |   +-- LIST: ArrayIniter
 |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   +-- CONST (int value: 7)
-|   +-- FUNC_DEF: main (sym: main, id: 25)
+|   +-- FUNC_DEF: main (sym: main, id: 27)
 |   |   +-- LIST: FParams
 |   |   +-- LIST: Block
-|   |   |   +-- ARRAY_DEF: b (sym: b, id: 26)
+|   |   |   +-- ARRAY_DEF: b (sym: b, id: 28)
 |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- CONST (int value: 1)
@@ -53,46 +53,48 @@ ID    Name                 Type            Data Type  Function             Shape
 19    putf                 function        void       N/A                  N/A       
 20    format_string        var             char       putf                 N/A       
 21    value                var             int        putf                 N/A       
-22    starttime            function        void       N/A                  N/A       
-23    stoptime             function        void       N/A                  N/A       
-24    a                    array           int        N/A                  4 2
-25    main                 function        int        N/A                  N/A       
-26    b                    array           int        main                 4 2
+22    _sysy_starttime      function        void       N/A                  N/A       
+23    line                 var             int        _sysy_starttime      N/A       
+24    _sysy_stoptime       function        void       N/A                  N/A       
+25    line                 var             int        _sysy_stoptime       N/A       
+26    a                    array           int        N/A                  4 2
+27    main                 function        int        N/A                  N/A       
+28    b                    array           int        main                 4 2
 -------------------------------------------------------------------------------------
 
 --- Generated IR ---
 ; ModuleID = 'main'
 
-@a.24 = external global [4 x [2 x i32]] [[2 x i32] [i32 1, i32 2], [2 x i32] [i32 3, i32 4], [2 x i32] [], [2 x i32] [i32 7]]
+@a.26 = external global [4 x [2 x i32]] [[2 x i32] [i32 1, i32 2], [2 x i32] [i32 3, i32 4], [2 x i32] [], [2 x i32] [i32 7]]
 
 define i32 @main() {
 main.entry:
-  %b.26 = alloca [4 x [2 x i32]]
-  %b.26.initer = alloca i32
-  store i32 0, i32* %b.26.initer
-  br label %b.26.initer.while.cond
-b.26.initer.while.cond:
-  %4 = load i32, i32* %b.26.initer
+  %b.28 = alloca [4 x [2 x i32]]
+  %b.28.initer = alloca i32
+  store i32 0, i32* %b.28.initer
+  br label %b.28.initer.while.cond
+b.28.initer.while.cond:
+  %4 = load i32, i32* %b.28.initer
   %lt.5 = icmp slt i32 %4, 8
-  br i1 %lt.5, label %b.26.initer.while.loop, label %b.26.initer.while.merge
-b.26.initer.while.loop:
-  %0 = load i32, i32* %b.26.initer
-  %1 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 %0
+  br i1 %lt.5, label %b.28.initer.while.loop, label %b.28.initer.while.merge
+b.28.initer.while.loop:
+  %0 = load i32, i32* %b.28.initer
+  %1 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 %0
   store i32 0, i32* %1
-  %2 = load i32, i32* %b.26.initer
+  %2 = load i32, i32* %b.28.initer
   %3 = add i32 %2, 1
-  store i32 %3, i32* %b.26.initer
-  br label %b.26.initer.while.cond
-b.26.initer.while.merge:
-  %6 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 0
+  store i32 %3, i32* %b.28.initer
+  br label %b.28.initer.while.cond
+b.28.initer.while.merge:
+  %6 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 0
   store i32 1, i32* %6
-  %7 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 1
+  %7 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 1
   store i32 2, i32* %7
-  %8 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 2
+  %8 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 2
   store i32 3, i32* %8
-  %9 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 3
+  %9 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 3
   store i32 4, i32* %9
-  %10 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 6
+  %10 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 6
   store i32 7, i32* %10
   ret i32 0
 }

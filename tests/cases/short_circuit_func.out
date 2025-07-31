@@ -2,40 +2,40 @@ Parsing completed successfully.
 
 --- Abstract Syntax Tree ---
 +-- ROOT
-|   +-- FUNC_DEF: sum (sym: sum, id: 24)
+|   +-- FUNC_DEF: sum (sym: sum, id: 26)
 |   |   +-- LIST: FParams
-|   |   |   +-- VAR_DEF: a (sym: a, id: 25)
-|   |   |   +-- VAR_DEF: b (sym: b, id: 26)
+|   |   |   +-- VAR_DEF: a (sym: a, id: 27)
+|   |   |   +-- VAR_DEF: b (sym: b, id: 28)
 |   |   +-- LIST: Block
-|   |   |   +-- RETURN_STMT: sum (sym: sum, id: 24)
+|   |   |   +-- RETURN_STMT: sum (sym: sum, id: 26)
 |   |   |   |   +-- BINARY_OP: +
-|   |   |   |   |   +-- VAR (sym: a, id: 25)
-|   |   |   |   |   +-- VAR (sym: b, id: 26)
-|   +-- FUNC_DEF: main (sym: main, id: 27)
+|   |   |   |   |   +-- VAR (sym: a, id: 27)
+|   |   |   |   |   +-- VAR (sym: b, id: 28)
+|   +-- FUNC_DEF: main (sym: main, id: 29)
 |   |   +-- LIST: FParams
 |   |   +-- LIST: Block
-|   |   |   +-- VAR_DEF: a (sym: a, id: 28)
+|   |   |   +-- VAR_DEF: a (sym: a, id: 30)
 |   |   |   |   +-- CONST (int value: 0)
-|   |   |   +-- VAR_DEF: b (sym: b, id: 29)
+|   |   |   +-- VAR_DEF: b (sym: b, id: 31)
 |   |   |   |   +-- CONST (int value: 1)
-|   |   |   +-- VAR_DEF: x (sym: x, id: 30)
+|   |   |   +-- VAR_DEF: x (sym: x, id: 32)
 |   |   |   |   +-- CONST (int value: 5)
-|   |   |   +-- VAR_DEF: result (sym: result, id: 31)
+|   |   |   +-- VAR_DEF: result (sym: result, id: 33)
 |   |   |   |   +-- CONST (int value: 0)
 |   |   |   +-- IF_STMT
 |   |   |   |   +-- BINARY_OP: ||
 |   |   |   |   |   +-- BINARY_OP: &&
-|   |   |   |   |   |   +-- VAR (sym: x, id: 30)
-|   |   |   |   |   |   +-- VAR (sym: b, id: 29)
-|   |   |   |   |   +-- FUNC_CALL: sum (sym: sum, id: 24)
-|   |   |   |   |   |   +-- VAR (sym: a, id: 28)
-|   |   |   |   |   |   +-- VAR (sym: b, id: 29)
+|   |   |   |   |   |   +-- VAR (sym: x, id: 32)
+|   |   |   |   |   |   +-- VAR (sym: b, id: 31)
+|   |   |   |   |   +-- FUNC_CALL: sum (sym: sum, id: 26)
+|   |   |   |   |   |   +-- VAR (sym: a, id: 30)
+|   |   |   |   |   |   +-- VAR (sym: b, id: 31)
 |   |   |   |   +-- LIST: If-2
 |   |   |   |   |   +-- ASSIGN_STMT
-|   |   |   |   |   |   +-- VAR (sym: result, id: 31)
+|   |   |   |   |   |   +-- VAR (sym: result, id: 33)
 |   |   |   |   |   |   +-- CONST (int value: 1)
-|   |   |   +-- RETURN_STMT: main (sym: main, id: 27)
-|   |   |   |   +-- VAR (sym: result, id: 31)
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 29)
+|   |   |   |   +-- VAR (sym: result, id: 33)
 
 --- Permanent Symbol Table ---
 ID    Name                 Type            Data Type  Function             Shape     
@@ -62,64 +62,66 @@ ID    Name                 Type            Data Type  Function             Shape
 19    putf                 function        void       N/A                  N/A       
 20    format_string        var             char       putf                 N/A       
 21    value                var             int        putf                 N/A       
-22    starttime            function        void       N/A                  N/A       
-23    stoptime             function        void       N/A                  N/A       
-24    sum                  function        int        N/A                  N/A       
-25    a                    var             int        sum                  N/A       
-26    b                    var             int        sum                  N/A       
-27    main                 function        int        N/A                  N/A       
-28    a                    var             int        main                 N/A       
-29    b                    var             int        main                 N/A       
-30    x                    var             int        main                 N/A       
-31    result               var             int        main                 N/A       
+22    _sysy_starttime      function        void       N/A                  N/A       
+23    line                 var             int        _sysy_starttime      N/A       
+24    _sysy_stoptime       function        void       N/A                  N/A       
+25    line                 var             int        _sysy_stoptime       N/A       
+26    sum                  function        int        N/A                  N/A       
+27    a                    var             int        sum                  N/A       
+28    b                    var             int        sum                  N/A       
+29    main                 function        int        N/A                  N/A       
+30    a                    var             int        main                 N/A       
+31    b                    var             int        main                 N/A       
+32    x                    var             int        main                 N/A       
+33    result               var             int        main                 N/A       
 -------------------------------------------------------------------------------------
 
 --- Generated IR ---
 ; ModuleID = 'main'
 
-define i32 @sum(i32 %param.a.25, i32 %param.b.26) {
+define i32 @sum(i32 %param.a.27, i32 %param.b.28) {
 sum.entry:
-  %a.25 = alloca i32
-  %b.26 = alloca i32
-  store i32 %param.a.25, i32* %a.25
-  store i32 %param.b.26, i32* %b.26
-  %0 = load i32, i32* %a.25
-  %1 = load i32, i32* %b.26
+  %a.27 = alloca i32
+  %b.28 = alloca i32
+  store i32 %param.a.27, i32* %a.27
+  store i32 %param.b.28, i32* %b.28
+  %0 = load i32, i32* %a.27
+  %1 = load i32, i32* %b.28
   %add.2 = add i32 %0, %1
   ret i32 %add.2
 }
 
 define i32 @main() {
 main.entry:
-  %a.28 = alloca i32
-  %b.29 = alloca i32
-  %x.30 = alloca i32
-  %result.31 = alloca i32
-  store i32 0, i32* %a.28
-  store i32 1, i32* %b.29
-  store i32 5, i32* %x.30
-  store i32 0, i32* %result.31
-  %3 = load i32, i32* %x.30
+  %a.30 = alloca i32
+  %b.31 = alloca i32
+  %x.32 = alloca i32
+  %result.33 = alloca i32
+  store i32 0, i32* %a.30
+  store i32 1, i32* %b.31
+  store i32 5, i32* %x.32
+  store i32 0, i32* %result.33
+  %3 = load i32, i32* %x.32
   br i1 %3, label %and.2.rhs, label %and.2.merge
 and.2.rhs:
-  %4 = load i32, i32* %b.29
+  %4 = load i32, i32* %b.31
   br label %and.2.merge
 and.2.merge:
   %and.2.result = phi i1 [ 0, %main.entry ], [ %4, %and.2.rhs ]
   br i1 %and.2.result, label %or.1.merge, label %or.1.rhs
 or.1.rhs:
-  %5 = load i32, i32* %a.28
-  %6 = load i32, i32* %b.29
+  %5 = load i32, i32* %a.30
+  %6 = load i32, i32* %b.31
   %7 = call i32 @sum(i32 %5, i32 %6)
   br label %or.1.merge
 or.1.merge:
   %or.1.result = phi i1 [ 1, %and.2.merge ], [ %7, %or.1.rhs ]
   br i1 %or.1.result, label %if.0.then, label %if.0.merge
 if.0.then:
-  store i32 1, i32* %result.31
+  store i32 1, i32* %result.33
   br label %if.0.merge
 if.0.merge:
-  %8 = load i32, i32* %result.31
+  %8 = load i32, i32* %result.33
   ret i32 %8
 }
 

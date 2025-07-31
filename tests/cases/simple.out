@@ -2,13 +2,13 @@ Parsing completed successfully.
 
 --- Abstract Syntax Tree ---
 +-- ROOT
-|   +-- FUNC_DEF: main (sym: main, id: 24)
+|   +-- FUNC_DEF: main (sym: main, id: 26)
 |   |   +-- LIST: FParams
 |   |   +-- LIST: Block
-|   |   |   +-- VAR_DEF: a (sym: a, id: 25)
+|   |   |   +-- VAR_DEF: a (sym: a, id: 27)
 |   |   |   |   +-- CONST (int value: 5)
-|   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
-|   |   |   |   +-- VAR (sym: a, id: 25)
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 26)
+|   |   |   |   +-- VAR (sym: a, id: 27)
 
 --- Permanent Symbol Table ---
 ID    Name                 Type            Data Type  Function             Shape     
@@ -35,10 +35,12 @@ ID    Name                 Type            Data Type  Function             Shape
 19    putf                 function        void       N/A                  N/A       
 20    format_string        var             char       putf                 N/A       
 21    value                var             int        putf                 N/A       
-22    starttime            function        void       N/A                  N/A       
-23    stoptime             function        void       N/A                  N/A       
-24    main                 function        int        N/A                  N/A       
-25    a                    var             int        main                 N/A       
+22    _sysy_starttime      function        void       N/A                  N/A       
+23    line                 var             int        _sysy_starttime      N/A       
+24    _sysy_stoptime       function        void       N/A                  N/A       
+25    line                 var             int        _sysy_stoptime       N/A       
+26    main                 function        int        N/A                  N/A       
+27    a                    var             int        main                 N/A       
 -------------------------------------------------------------------------------------
 
 --- Generated IR ---
@@ -46,9 +48,9 @@ ID    Name                 Type            Data Type  Function             Shape
 
 define i32 @main() {
 main.entry:
-  %a.25 = alloca i32
-  store i32 5, i32* %a.25
-  %0 = load i32, i32* %a.25
+  %a.27 = alloca i32
+  store i32 5, i32* %a.27
+  %0 = load i32, i32* %a.27
   ret i32 %0
 }
 
