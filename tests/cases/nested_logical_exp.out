@@ -2,7 +2,7 @@ Parsing completed successfully.
 
 --- Abstract Syntax Tree ---
 +-- ROOT
-|   +-- FUNC_DEF: main (sym: main, id: 24)
+|   +-- FUNC_DEF: main (sym: main, id: 26)
 |   |   +-- LIST: FParams
 |   |   +-- LIST: Block
 |   |   |   +-- IF_ELSE_STMT
@@ -20,7 +20,7 @@ Parsing completed successfully.
 |   |   |   |   |   |   |   |   +-- CONST (int value: 1)
 |   |   |   |   |   |   |   |   +-- LIST: If-2
 |   |   |   |   |   |   |   |   +-- LIST: If-3
-|   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 26)
 |   |   |   |   +-- CONST (int value: 0)
 
 --- Permanent Symbol Table ---
@@ -49,8 +49,10 @@ ID    Name                 Type            Data Type  Function             Shape
 20    format_string        var             char       putf                 N/A       
 21    value                var             int        putf                 N/A       
 22    starttime            function        void       N/A                  N/A       
-23    stoptime             function        void       N/A                  N/A       
-24    main                 function        int        N/A                  N/A       
+23    line                 var             int        starttime            N/A       
+24    stoptime             function        void       N/A                  N/A       
+25    line                 var             int        stoptime             N/A       
+26    main                 function        int        N/A                  N/A       
 -------------------------------------------------------------------------------------
 
 --- Generated IR ---

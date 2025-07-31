@@ -2,26 +2,12 @@ Parsing completed successfully.
 
 --- Abstract Syntax Tree ---
 +-- ROOT
-|   +-- FUNC_DEF: main (sym: main, id: 24)
+|   +-- FUNC_DEF: main (sym: main, id: 26)
 |   |   +-- LIST: FParams
 |   |   +-- LIST: Block
-|   |   |   +-- ARRAY_DEF: a (sym: a, id: 25)
+|   |   |   +-- ARRAY_DEF: a (sym: a, id: 27)
 |   |   |   |   +-- LIST: ArrayIniter
-|   |   |   +-- ARRAY_DEF: b (sym: b, id: 26)
-|   |   |   |   +-- LIST: ArrayIniter
-|   |   |   |   |   +-- LIST: ArrayIniter
-|   |   |   |   |   |   +-- CONST (int value: 1)
-|   |   |   |   |   |   +-- CONST (int value: 2)
-|   |   |   |   |   +-- LIST: ArrayIniter
-|   |   |   |   |   |   +-- CONST (int value: 3)
-|   |   |   |   |   |   +-- CONST (int value: 4)
-|   |   |   |   |   +-- LIST: ArrayIniter
-|   |   |   |   |   |   +-- CONST (int value: 5)
-|   |   |   |   |   |   +-- CONST (int value: 6)
-|   |   |   |   |   +-- LIST: ArrayIniter
-|   |   |   |   |   |   +-- CONST (int value: 7)
-|   |   |   |   |   |   +-- CONST (int value: 8)
-|   |   |   +-- ARRAY_DEF: c (sym: c, id: 27)
+|   |   |   +-- ARRAY_DEF: b (sym: b, id: 28)
 |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- CONST (int value: 1)
@@ -35,7 +21,21 @@ Parsing completed successfully.
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- CONST (int value: 7)
 |   |   |   |   |   |   +-- CONST (int value: 8)
-|   |   |   +-- ARRAY_DEF: d (sym: d, id: 28)
+|   |   |   +-- ARRAY_DEF: c (sym: c, id: 29)
+|   |   |   |   +-- LIST: ArrayIniter
+|   |   |   |   |   +-- LIST: ArrayIniter
+|   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   |   |   |   +-- CONST (int value: 2)
+|   |   |   |   |   +-- LIST: ArrayIniter
+|   |   |   |   |   |   +-- CONST (int value: 3)
+|   |   |   |   |   |   +-- CONST (int value: 4)
+|   |   |   |   |   +-- LIST: ArrayIniter
+|   |   |   |   |   |   +-- CONST (int value: 5)
+|   |   |   |   |   |   +-- CONST (int value: 6)
+|   |   |   |   |   +-- LIST: ArrayIniter
+|   |   |   |   |   |   +-- CONST (int value: 7)
+|   |   |   |   |   |   +-- CONST (int value: 8)
+|   |   |   +-- ARRAY_DEF: d (sym: d, id: 30)
 |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- CONST (int value: 1)
@@ -47,13 +47,13 @@ Parsing completed successfully.
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- CONST (int value: 7)
 |   |   |   |   |   |   +-- CONST (int value: 8)
-|   |   |   +-- ARRAY_DEF: e (sym: e, id: 29)
+|   |   |   +-- ARRAY_DEF: e (sym: e, id: 31)
 |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   +-- LIST: ArrayIniter
-|   |   |   |   |   |   +-- ARRAY_ACCESS: Dims (sym: d, id: 28)
+|   |   |   |   |   |   +-- ARRAY_ACCESS: Dims (sym: d, id: 30)
 |   |   |   |   |   |   |   +-- CONST (int value: 2)
 |   |   |   |   |   |   |   +-- CONST (int value: 1)
-|   |   |   |   |   |   +-- ARRAY_ACCESS: Dims (sym: c, id: 27)
+|   |   |   |   |   |   +-- ARRAY_ACCESS: Dims (sym: c, id: 29)
 |   |   |   |   |   |   |   +-- CONST (int value: 2)
 |   |   |   |   |   |   |   +-- CONST (int value: 1)
 |   |   |   |   |   +-- LIST: ArrayIniter
@@ -65,7 +65,7 @@ Parsing completed successfully.
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- CONST (int value: 7)
 |   |   |   |   |   |   +-- CONST (int value: 8)
-|   |   |   +-- ARRAY_DEF: f (sym: f, id: 30)
+|   |   |   +-- ARRAY_DEF: f (sym: f, id: 32)
 |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- CONST (int value: 1)
@@ -76,7 +76,7 @@ Parsing completed successfully.
 |   |   |   |   |   |   +-- CONST (int value: 4)
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- CONST (int value: 5)
-|   |   |   +-- ARRAY_DEF: g (sym: g, id: 31)
+|   |   |   +-- ARRAY_DEF: g (sym: g, id: 33)
 |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   +-- LIST: ArrayIniter
@@ -86,7 +86,7 @@ Parsing completed successfully.
 |   |   |   |   |   |   |   +-- CONST (int value: 2)
 |   |   |   |   |   |   +-- LIST: ArrayIniter
 |   |   |   |   |   |   |   +-- CONST (int value: 3)
-|   |   |   +-- RETURN_STMT: main (sym: main, id: 24)
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 26)
 |   |   |   |   +-- CONST (int value: 0)
 
 --- Permanent Symbol Table ---
@@ -115,15 +115,17 @@ ID    Name                 Type            Data Type  Function             Shape
 20    format_string        var             char       putf                 N/A       
 21    value                var             int        putf                 N/A       
 22    starttime            function        void       N/A                  N/A       
-23    stoptime             function        void       N/A                  N/A       
-24    main                 function        int        N/A                  N/A       
-25    a                    array           int        main                 4 2
-26    b                    array           int        main                 4 2
-27    c                    array           int        main                 4 2
-28    d                    array           int        main                 4 2
-29    e                    array           int        main                 4 2
-30    f                    array           int        main                 4 2
-31    g                    array           int        main                 2 2 2
+23    line                 var             int        starttime            N/A       
+24    stoptime             function        void       N/A                  N/A       
+25    line                 var             int        stoptime             N/A       
+26    main                 function        int        N/A                  N/A       
+27    a                    array           int        main                 4 2
+28    b                    array           int        main                 4 2
+29    c                    array           int        main                 4 2
+30    d                    array           int        main                 4 2
+31    e                    array           int        main                 4 2
+32    f                    array           int        main                 4 2
+33    g                    array           int        main                 2 2 2
 -------------------------------------------------------------------------------------
 
 --- Generated IR ---
@@ -131,204 +133,204 @@ ID    Name                 Type            Data Type  Function             Shape
 
 define i32 @main() {
 main.entry:
-  %a.25 = alloca [4 x [2 x i32]]
-  %b.26 = alloca [4 x [2 x i32]]
-  %c.27 = alloca [4 x [2 x i32]]
-  %d.28 = alloca [4 x [2 x i32]]
-  %e.29 = alloca [4 x [2 x i32]]
-  %f.30 = alloca [4 x [2 x i32]]
-  %g.31 = alloca [2 x [2 x [2 x i32]]]
-  %a.25.initer = alloca i32
-  store i32 0, i32* %a.25.initer
-  br label %a.25.initer.while.cond
-a.25.initer.while.cond:
-  %4 = load i32, i32* %a.25.initer
+  %a.27 = alloca [4 x [2 x i32]]
+  %b.28 = alloca [4 x [2 x i32]]
+  %c.29 = alloca [4 x [2 x i32]]
+  %d.30 = alloca [4 x [2 x i32]]
+  %e.31 = alloca [4 x [2 x i32]]
+  %f.32 = alloca [4 x [2 x i32]]
+  %g.33 = alloca [2 x [2 x [2 x i32]]]
+  %a.27.initer = alloca i32
+  store i32 0, i32* %a.27.initer
+  br label %a.27.initer.while.cond
+a.27.initer.while.cond:
+  %4 = load i32, i32* %a.27.initer
   %lt.5 = icmp slt i32 %4, 8
-  br i1 %lt.5, label %a.25.initer.while.loop, label %a.25.initer.while.merge
-a.25.initer.while.loop:
-  %0 = load i32, i32* %a.25.initer
-  %1 = getelementptr [8 x i32], [4 x [2 x i32]]* %a.25, i32 %0
+  br i1 %lt.5, label %a.27.initer.while.loop, label %a.27.initer.while.merge
+a.27.initer.while.loop:
+  %0 = load i32, i32* %a.27.initer
+  %1 = getelementptr [8 x i32], [4 x [2 x i32]]* %a.27, i32 %0
   store i32 0, i32* %1
-  %2 = load i32, i32* %a.25.initer
+  %2 = load i32, i32* %a.27.initer
   %3 = add i32 %2, 1
-  store i32 %3, i32* %a.25.initer
-  br label %a.25.initer.while.cond
-a.25.initer.while.merge:
-  %b.26.initer = alloca i32
-  store i32 0, i32* %b.26.initer
-  br label %b.26.initer.while.cond
-b.26.initer.while.cond:
-  %10 = load i32, i32* %b.26.initer
+  store i32 %3, i32* %a.27.initer
+  br label %a.27.initer.while.cond
+a.27.initer.while.merge:
+  %b.28.initer = alloca i32
+  store i32 0, i32* %b.28.initer
+  br label %b.28.initer.while.cond
+b.28.initer.while.cond:
+  %10 = load i32, i32* %b.28.initer
   %lt.11 = icmp slt i32 %10, 8
-  br i1 %lt.11, label %b.26.initer.while.loop, label %b.26.initer.while.merge
-b.26.initer.while.loop:
-  %6 = load i32, i32* %b.26.initer
-  %7 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 %6
+  br i1 %lt.11, label %b.28.initer.while.loop, label %b.28.initer.while.merge
+b.28.initer.while.loop:
+  %6 = load i32, i32* %b.28.initer
+  %7 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 %6
   store i32 0, i32* %7
-  %8 = load i32, i32* %b.26.initer
+  %8 = load i32, i32* %b.28.initer
   %9 = add i32 %8, 1
-  store i32 %9, i32* %b.26.initer
-  br label %b.26.initer.while.cond
-b.26.initer.while.merge:
-  %12 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 0
+  store i32 %9, i32* %b.28.initer
+  br label %b.28.initer.while.cond
+b.28.initer.while.merge:
+  %12 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 0
   store i32 1, i32* %12
-  %13 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 1
+  %13 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 1
   store i32 2, i32* %13
-  %14 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 2
+  %14 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 2
   store i32 3, i32* %14
-  %15 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 3
+  %15 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 3
   store i32 4, i32* %15
-  %16 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 4
+  %16 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 4
   store i32 5, i32* %16
-  %17 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 5
+  %17 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 5
   store i32 6, i32* %17
-  %18 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 6
+  %18 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 6
   store i32 7, i32* %18
-  %19 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.26, i32 7
+  %19 = getelementptr [8 x i32], [4 x [2 x i32]]* %b.28, i32 7
   store i32 8, i32* %19
-  %c.27.initer = alloca i32
-  store i32 0, i32* %c.27.initer
-  br label %c.27.initer.while.cond
-c.27.initer.while.cond:
-  %24 = load i32, i32* %c.27.initer
+  %c.29.initer = alloca i32
+  store i32 0, i32* %c.29.initer
+  br label %c.29.initer.while.cond
+c.29.initer.while.cond:
+  %24 = load i32, i32* %c.29.initer
   %lt.25 = icmp slt i32 %24, 8
-  br i1 %lt.25, label %c.27.initer.while.loop, label %c.27.initer.while.merge
-c.27.initer.while.loop:
-  %20 = load i32, i32* %c.27.initer
-  %21 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 %20
+  br i1 %lt.25, label %c.29.initer.while.loop, label %c.29.initer.while.merge
+c.29.initer.while.loop:
+  %20 = load i32, i32* %c.29.initer
+  %21 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 %20
   store i32 0, i32* %21
-  %22 = load i32, i32* %c.27.initer
+  %22 = load i32, i32* %c.29.initer
   %23 = add i32 %22, 1
-  store i32 %23, i32* %c.27.initer
-  br label %c.27.initer.while.cond
-c.27.initer.while.merge:
-  %26 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 0
+  store i32 %23, i32* %c.29.initer
+  br label %c.29.initer.while.cond
+c.29.initer.while.merge:
+  %26 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 0
   store i32 1, i32* %26
-  %27 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 1
+  %27 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 1
   store i32 2, i32* %27
-  %28 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 2
+  %28 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 2
   store i32 3, i32* %28
-  %29 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 3
+  %29 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 3
   store i32 4, i32* %29
-  %30 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 4
+  %30 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 4
   store i32 5, i32* %30
-  %31 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 5
+  %31 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 5
   store i32 6, i32* %31
-  %32 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 6
+  %32 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 6
   store i32 7, i32* %32
-  %33 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.27, i32 7
+  %33 = getelementptr [8 x i32], [4 x [2 x i32]]* %c.29, i32 7
   store i32 8, i32* %33
-  %d.28.initer = alloca i32
-  store i32 0, i32* %d.28.initer
-  br label %d.28.initer.while.cond
-d.28.initer.while.cond:
-  %38 = load i32, i32* %d.28.initer
+  %d.30.initer = alloca i32
+  store i32 0, i32* %d.30.initer
+  br label %d.30.initer.while.cond
+d.30.initer.while.cond:
+  %38 = load i32, i32* %d.30.initer
   %lt.39 = icmp slt i32 %38, 8
-  br i1 %lt.39, label %d.28.initer.while.loop, label %d.28.initer.while.merge
-d.28.initer.while.loop:
-  %34 = load i32, i32* %d.28.initer
-  %35 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.28, i32 %34
+  br i1 %lt.39, label %d.30.initer.while.loop, label %d.30.initer.while.merge
+d.30.initer.while.loop:
+  %34 = load i32, i32* %d.30.initer
+  %35 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.30, i32 %34
   store i32 0, i32* %35
-  %36 = load i32, i32* %d.28.initer
+  %36 = load i32, i32* %d.30.initer
   %37 = add i32 %36, 1
-  store i32 %37, i32* %d.28.initer
-  br label %d.28.initer.while.cond
-d.28.initer.while.merge:
-  %40 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.28, i32 0
+  store i32 %37, i32* %d.30.initer
+  br label %d.30.initer.while.cond
+d.30.initer.while.merge:
+  %40 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.30, i32 0
   store i32 1, i32* %40
-  %41 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.28, i32 1
+  %41 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.30, i32 1
   store i32 2, i32* %41
-  %42 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.28, i32 2
+  %42 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.30, i32 2
   store i32 3, i32* %42
-  %43 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.28, i32 4
+  %43 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.30, i32 4
   store i32 5, i32* %43
-  %44 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.28, i32 6
+  %44 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.30, i32 6
   store i32 7, i32* %44
-  %45 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.28, i32 7
+  %45 = getelementptr [8 x i32], [4 x [2 x i32]]* %d.30, i32 7
   store i32 8, i32* %45
-  %e.29.initer = alloca i32
-  store i32 0, i32* %e.29.initer
-  br label %e.29.initer.while.cond
-e.29.initer.while.cond:
-  %50 = load i32, i32* %e.29.initer
+  %e.31.initer = alloca i32
+  store i32 0, i32* %e.31.initer
+  br label %e.31.initer.while.cond
+e.31.initer.while.cond:
+  %50 = load i32, i32* %e.31.initer
   %lt.51 = icmp slt i32 %50, 8
-  br i1 %lt.51, label %e.29.initer.while.loop, label %e.29.initer.while.merge
-e.29.initer.while.loop:
-  %46 = load i32, i32* %e.29.initer
-  %47 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 %46
+  br i1 %lt.51, label %e.31.initer.while.loop, label %e.31.initer.while.merge
+e.31.initer.while.loop:
+  %46 = load i32, i32* %e.31.initer
+  %47 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 %46
   store i32 0, i32* %47
-  %48 = load i32, i32* %e.29.initer
+  %48 = load i32, i32* %e.31.initer
   %49 = add i32 %48, 1
-  store i32 %49, i32* %e.29.initer
-  br label %e.29.initer.while.cond
-e.29.initer.while.merge:
-  %52 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %d.28, i32 2, i32 1
+  store i32 %49, i32* %e.31.initer
+  br label %e.31.initer.while.cond
+e.31.initer.while.merge:
+  %52 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %d.30, i32 2, i32 1
   %53 = load i32, i32* %52
-  %54 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %c.27, i32 2, i32 1
+  %54 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %c.29, i32 2, i32 1
   %55 = load i32, i32* %54
-  %56 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 0
+  %56 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 0
   store i32 %53, i32* %56
-  %57 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 1
+  %57 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 1
   store i32 %55, i32* %57
-  %58 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 2
+  %58 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 2
   store i32 3, i32* %58
-  %59 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 3
+  %59 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 3
   store i32 4, i32* %59
-  %60 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 4
+  %60 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 4
   store i32 5, i32* %60
-  %61 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 5
+  %61 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 5
   store i32 6, i32* %61
-  %62 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 6
+  %62 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 6
   store i32 7, i32* %62
-  %63 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.29, i32 7
+  %63 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 7
   store i32 8, i32* %63
-  %f.30.initer = alloca i32
-  store i32 0, i32* %f.30.initer
-  br label %f.30.initer.while.cond
-f.30.initer.while.cond:
-  %68 = load i32, i32* %f.30.initer
+  %f.32.initer = alloca i32
+  store i32 0, i32* %f.32.initer
+  br label %f.32.initer.while.cond
+f.32.initer.while.cond:
+  %68 = load i32, i32* %f.32.initer
   %lt.69 = icmp slt i32 %68, 8
-  br i1 %lt.69, label %f.30.initer.while.loop, label %f.30.initer.while.merge
-f.30.initer.while.loop:
-  %64 = load i32, i32* %f.30.initer
-  %65 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.30, i32 %64
+  br i1 %lt.69, label %f.32.initer.while.loop, label %f.32.initer.while.merge
+f.32.initer.while.loop:
+  %64 = load i32, i32* %f.32.initer
+  %65 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 %64
   store i32 0, i32* %65
-  %66 = load i32, i32* %f.30.initer
+  %66 = load i32, i32* %f.32.initer
   %67 = add i32 %66, 1
-  store i32 %67, i32* %f.30.initer
-  br label %f.30.initer.while.cond
-f.30.initer.while.merge:
-  %70 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.30, i32 0
+  store i32 %67, i32* %f.32.initer
+  br label %f.32.initer.while.cond
+f.32.initer.while.merge:
+  %70 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 0
   store i32 1, i32* %70
-  %71 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.30, i32 1
+  %71 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 1
   store i32 2, i32* %71
-  %72 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.30, i32 2
+  %72 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 2
   store i32 3, i32* %72
-  %73 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.30, i32 4
+  %73 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 4
   store i32 4, i32* %73
-  %74 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.30, i32 6
+  %74 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 6
   store i32 5, i32* %74
-  %g.31.initer = alloca i32
-  store i32 0, i32* %g.31.initer
-  br label %g.31.initer.while.cond
-g.31.initer.while.cond:
-  %79 = load i32, i32* %g.31.initer
+  %g.33.initer = alloca i32
+  store i32 0, i32* %g.33.initer
+  br label %g.33.initer.while.cond
+g.33.initer.while.cond:
+  %79 = load i32, i32* %g.33.initer
   %lt.80 = icmp slt i32 %79, 8
-  br i1 %lt.80, label %g.31.initer.while.loop, label %g.31.initer.while.merge
-g.31.initer.while.loop:
-  %75 = load i32, i32* %g.31.initer
-  %76 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.31, i32 %75
+  br i1 %lt.80, label %g.33.initer.while.loop, label %g.33.initer.while.merge
+g.33.initer.while.loop:
+  %75 = load i32, i32* %g.33.initer
+  %76 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 %75
   store i32 0, i32* %76
-  %77 = load i32, i32* %g.31.initer
+  %77 = load i32, i32* %g.33.initer
   %78 = add i32 %77, 1
-  store i32 %78, i32* %g.31.initer
-  br label %g.31.initer.while.cond
-g.31.initer.while.merge:
-  %81 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.31, i32 0
+  store i32 %78, i32* %g.33.initer
+  br label %g.33.initer.while.cond
+g.33.initer.while.merge:
+  %81 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 0
   store i32 1, i32* %81
-  %82 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.31, i32 4
+  %82 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 4
   store i32 2, i32* %82
-  %83 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.31, i32 6
+  %83 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 6
   store i32 3, i32* %83
   ret i32 0
 }
