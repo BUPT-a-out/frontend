@@ -406,8 +406,8 @@ UnaryExp:
         }
         sym->attributes.func_info.call_count++;
         data.symb_ptr = sym;
-        // 单独处理_sysy_starttime(__LINE__)和_sysy_stoptime(__LINE__)
-        if (strcmp($1, "_sysy_starttime") == 0 || strcmp($1, "_sysy_stoptime") == 0) {
+        // 单独处理starttime(__LINE__)和stoptime(__LINE__)
+        if (strcmp($1, "starttime") == 0 || strcmp($1, "stoptime") == 0) {
             NodeData line_node_data;
             ASTNodePtr line_node;
             line_node_data.direct_int = yylineno;

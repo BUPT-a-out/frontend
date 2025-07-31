@@ -152,8 +152,8 @@ void add_runtime_lib_to_symbol_table() {
     exit_scope();
     func_name_to_ptr["putf"] = sym;
 
-    // 12. void _sysy_starttime(int)
-    sym = define_symbol("_sysy_starttime", SYMB_FUNCTION, DATA_VOID, 0);
+    // 12. void starttime(int)
+    sym = define_symbol("starttime", SYMB_FUNCTION, DATA_VOID, 0);
     enter_scope();
     sym->attributes.func_info.param_count = 0;
     sym->attributes.func_info.params = (SymbolPtr*)malloc(sizeof(SymbolPtr));
@@ -161,10 +161,10 @@ void add_runtime_lib_to_symbol_table() {
     param->function = sym;
     sym->attributes.func_info.params[0] = param;
     exit_scope();
-    func_name_to_ptr["_sysy_starttime"] = sym;
+    func_name_to_ptr["starttime"] = sym;
 
-    // 13. void _sysy_stoptime(int)
-    sym = define_symbol("_sysy_stoptime", SYMB_FUNCTION, DATA_VOID, 0);
+    // 13. void stoptime(int)
+    sym = define_symbol("stoptime", SYMB_FUNCTION, DATA_VOID, 0);
     enter_scope();
     sym->attributes.func_info.param_count = 0;
     sym->attributes.func_info.params = (SymbolPtr*)malloc(sizeof(SymbolPtr));
@@ -172,7 +172,7 @@ void add_runtime_lib_to_symbol_table() {
     param->function = sym;
     sym->attributes.func_info.params[0] = param;
     exit_scope();
-    func_name_to_ptr["_sysy_stoptime"] = sym;
+    func_name_to_ptr["stoptime"] = sym;
 }
 
 void add_runtime_lib_to_func_tab(midend::Module* module) {
@@ -334,7 +334,7 @@ void add_runtime_lib_to_func_tab(midend::Module* module) {
         func_tab[sym->id] = func;
     }
 
-    sym = func_name_to_ptr["_sysy_starttime"];
+    sym = func_name_to_ptr["starttime"];
     if (sym->attributes.func_info.call_count) {
         midend::Type* return_type = ctx->getVoidType();
         std::vector<midend::Type*> param_types;
@@ -348,7 +348,7 @@ void add_runtime_lib_to_func_tab(midend::Module* module) {
         func_tab[sym->id] = func;
     }
 
-    sym = func_name_to_ptr["_sysy_stoptime"];
+    sym = func_name_to_ptr["stoptime"];
     if (sym->attributes.func_info.call_count) {
         midend::Type* return_type = ctx->getVoidType();
         std::vector<midend::Type*> param_types;

@@ -62,10 +62,10 @@ ID    Name                 Type            Data Type  Function             Shape
 19    putf                 function        void       N/A                  N/A       
 20    format_string        var             char       putf                 N/A       
 21    value                var             int        putf                 N/A       
-22    _sysy_starttime      function        void       N/A                  N/A       
-23    line                 var             int        _sysy_starttime      N/A       
-24    _sysy_stoptime       function        void       N/A                  N/A       
-25    line                 var             int        _sysy_stoptime       N/A       
+22    starttime            function        void       N/A                  N/A       
+23    line                 var             int        starttime            N/A       
+24    stoptime             function        void       N/A                  N/A       
+25    line                 var             int        stoptime             N/A       
 26    sum                  function        int        N/A                  N/A       
 27    a                    var             int        sum                  N/A       
 28    b                    var             int        sum                  N/A       
