@@ -704,7 +704,8 @@ ASTNodePtr fold_unary_exp(ASTNodePtr node) {
     ASTNodePtr folded;
     NodeData data;
     int valid, is_float;
-    double val, result;
+    int int_val = 0, int_result = 0;
+    float float_val = 0.0, float_result = 0.0;
 
     if (!node) return node;
     if (node->node_type != NODE_UNARY_OP) return node;
@@ -712,20 +713,26 @@ ASTNodePtr fold_unary_exp(ASTNodePtr node) {
     child = node->children[0];
     if (child && child->node_type == NODE_CONST) {
         is_float = (child->data_type == NODEDATA_FLOAT);
-        val = is_float ? child->data.direct_float : child->data.direct_int;
-        result = 0;
+        if (is_float) float_val = child->data.direct_float;
+        else int_val = child->data.direct_int;
         valid = 1;
-        if (strcmp(node->name, "+") == 0) result = val;
-        else if (strcmp(node->name, "-") == 0) result = -val;
-        else if (strcmp(node->name, "!") == 0) result = !val;
-        else valid = 0;
+        if (strcmp(node->name, "+") == 0) {
+            int_result = int_val;
+            float_result = float_val;
+        } else if (strcmp(node->name, "-") == 0) {
+            int_result = -int_val;
+            float_result = -float_val;
+        } else if (strcmp(node->name, "!") == 0) {
+            int_result = !int_val;
+            float_result = !float_val;
+        } else valid = 0;
         if (valid) {
             folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
             if (is_float) {
-                data.direct_float = (float)result;
+                data.direct_float = float_result;
                 set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, NODEDATA_FLOAT, -1);
             } else {
-                data.direct_int = (int)result;
+                data.direct_int = int_result;
                 set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, NODEDATA_INT, -1);
             }
             return folded;
@@ -740,7 +747,8 @@ ASTNodePtr fold_binary_exp(ASTNodePtr node) {
     ASTNodePtr folded;
     NodeData data;
     int is_float, valid;
-    double lval, rval, result;
+    int l_int_val = 0, r_int_val = 0, int_result = 0;
+    float l_float_val = 0.0, r_float_val = 0.0, float_result = 0.0;
 
     if (!node) return node;
     if (node->node_type != NODE_BINARY_OP) return node;
@@ -750,37 +758,98 @@ ASTNodePtr fold_binary_exp(ASTNodePtr node) {
     // 只处理左右都是常量的情况
     if (lhs && rhs && lhs->node_type == NODE_CONST && rhs->node_type == NODE_CONST) {
         is_float = (lhs->data_type == NODEDATA_FLOAT || rhs->data_type == NODEDATA_FLOAT);
-        lval = (lhs->data_type == NODEDATA_FLOAT) ? lhs->data.direct_float : lhs->data.direct_int;
-        rval = (rhs->data_type == NODEDATA_FLOAT) ? rhs->data.direct_float : rhs->data.direct_int;
-        result = 0;
+        if (lhs->data_type == NODEDATA_FLOAT) {
+            l_int_val = (int)lhs->data.direct_float;
+            l_float_val = lhs->data.direct_float;
+        } else {
+            l_int_val = lhs->data.direct_int;
+            l_float_val = (float)lhs->data.direct_int;
+        }
+        if (rhs->data_type == NODEDATA_FLOAT) {
+            r_int_val = (int)rhs->data.direct_float;
+            r_float_val = rhs->data.direct_float;
+        } else {
+            r_int_val = rhs->data.direct_int;
+            r_float_val = (float)rhs->data.direct_int;
+        }
         valid = 1;
-        if (strcmp(node->name, "+") == 0) result = lval + rval;
-        else if (strcmp(node->name, "-") == 0) result = lval - rval;
-        else if (strcmp(node->name, "*") == 0) result = lval * rval;
-        else if (strcmp(node->name, "/") == 0) {
-            if (rval == 0) valid = 0;
-            else result = lval / rval;
-        }
-        else if (strcmp(node->name, "%") == 0) {
-            if (!is_float && (int)rval != 0) result = (int)lval % (int)rval;
-            else valid = 0;
-        }
-        else if (strcmp(node->name, "<") == 0) result = lval < rval;
-        else if (strcmp(node->name, ">") == 0) result = lval > rval;
-        else if (strcmp(node->name, "<=") == 0) result = lval <= rval;
-        else if (strcmp(node->name, ">=") == 0) result = lval >= rval;
-        else if (strcmp(node->name, "==") == 0) result = lval == rval;
-        else if (strcmp(node->name, "!=") == 0) result = lval != rval;
-        else if (strcmp(node->name, "&&") == 0) result = lval && rval;
-        else if (strcmp(node->name, "||") == 0) result = lval || rval;
-        else valid = 0;
+        if (strcmp(node->name, "+") == 0) {
+            int_result = l_int_val + r_int_val;
+            float_result = l_float_val + r_float_val;
+        } else if (strcmp(node->name, "-") == 0) {
+            int_result = l_int_val - r_int_val;
+            float_result = l_float_val - r_float_val;
+        } else if (strcmp(node->name, "*") == 0) {
+            int_result = l_int_val * r_int_val;
+            float_result = l_float_val * r_float_val;
+        } else if (strcmp(node->name, "/") == 0) {
+            if (is_float) {
+                if (r_float_val == 0) valid = 0;
+                else float_result = l_float_val / r_float_val;
+            } else {
+                if (r_int_val == 0) valid = 0;
+                else int_result = l_int_val / r_int_val;
+            }
+        } else if (strcmp(node->name, "%") == 0) {
+            if (!is_float && r_int_val != 0)  {
+                int_result = l_int_val % r_int_val;
+            } else valid = 0;
+        } else if (strcmp(node->name, "<") == 0) {
+            if (is_float)
+                int_result = l_float_val < r_float_val;
+            else
+                int_result = l_int_val < r_int_val;
+            is_float = 0;
+        } else if (strcmp(node->name, ">") == 0) {
+            if (is_float)
+                int_result = l_float_val > r_float_val;
+            else
+                int_result = l_int_val > r_int_val;
+            is_float = 0;
+        } else if (strcmp(node->name, "<=") == 0) {
+            if (is_float)
+                int_result = l_float_val <= r_float_val;
+            else
+                int_result = l_int_val <= r_int_val;
+            is_float = 0;
+        } else if (strcmp(node->name, ">=") == 0) {
+            if (is_float)
+                int_result = l_float_val >= r_float_val;
+            else
+                int_result = l_int_val >= r_int_val;
+            is_float = 0;
+        } else if (strcmp(node->name, "==") == 0) {
+            if (is_float)
+                int_result = l_float_val == r_float_val;
+            else
+                int_result = l_int_val == r_int_val;
+            is_float = 0;
+        } else if (strcmp(node->name, "!=") == 0) {
+            if (is_float)
+                int_result = l_float_val != r_float_val;
+            else
+                int_result = l_int_val != r_int_val;
+            is_float = 0;
+        } else if (strcmp(node->name, "&&") == 0) {
+            if (is_float)
+                int_result = l_float_val && r_float_val;
+            else
+                int_result = l_int_val && r_int_val;
+            is_float = 0;
+        } else if (strcmp(node->name, "||") == 0) {
+            if (is_float)
+                int_result = l_float_val || r_float_val;
+            else
+                int_result = l_int_val || r_int_val;
+            is_float = 0;
+        } else valid = 0;
         if (valid) {
             folded = create_ast_node(NODE_CONST, NULL, node->lineno, 0);
             if (is_float) {
-                data.direct_float = (float)result;
+                data.direct_float = float_result;
                 set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, NODEDATA_FLOAT, -1);
             } else {
-                data.direct_int = (int)result;
+                data.direct_int = int_result;
                 set_ast_node_data(folded, HOLD_NODETYPE, NULL, data, NODEDATA_INT, -1);
             }
             return folded;

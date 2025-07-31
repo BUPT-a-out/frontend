@@ -818,9 +818,12 @@ midend::Value* translate_node(
                         right = create_type_tran(builder, right, DATA_FLOAT);
                     }
                 }
-                if (!left) left = get_type_value(builder, left_node, des_type);
-                if (!right)
+                if (!left) {
+                    left = get_type_value(builder, left_node, des_type);
+                }
+                if (!right) {
                     right = get_type_value(builder, right_node, des_type);
+                }
 
                 return create_binary_op(builder, left, right, op_name);
             }
