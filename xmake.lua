@@ -53,9 +53,29 @@ rule("lex")
         local flex = assert(find_tool("flex"), "flex not found!")
         local srcdir = path.join(target:scriptdir(), "src/sy_parser")
         local target_c = path.join(srcdir, "lex.yy.c")
+        local yacc_header = path.join(target:scriptdir(), "include/sy_parser/y.tab.h")
+        
+        -- Ensure yacc header exists first
+        if not os.isfile(yacc_header) then
+            -- Find yacc source file and force generation
+            local yacc_files = os.files(path.join(target:scriptdir(), "flex_yacc/*.y"))
+            if #yacc_files > 0 then
+                local bison = assert(find_tool("bison"), "bison not found!")
+                local yacc_src = yacc_files[1]
+                local yacc_target_c = path.join(srcdir, "y.tab.c")
+                os.mkdir(srcdir)
+                os.mkdir(path.join(target:scriptdir(), "include/sy_parser"))
+                cprint("${color.build.object}generating.yacc %s (required by lex)", yacc_src)
+                os.vrunv(bison.program, {"-d", "-o", yacc_target_c, yacc_src})
+                local temp_header = path.join(srcdir, "y.tab.h")
+                if os.isfile(temp_header) then
+                    os.mv(temp_header, yacc_header)
+                end
+            end
+        end
+        
         local sourcefile_mtime = os.mtime(sourcefile) or 0
         local target_c_mtime = os.mtime(target_c) or 0
-        local yacc_header = path.join(target:scriptdir(), "include/sy_parser/y.tab.h")
         local yacc_header_mtime = os.mtime(yacc_header) or 0
         if sourcefile_mtime > target_c_mtime or yacc_header_mtime > target_c_mtime or 
            target_c_mtime == 0 then
