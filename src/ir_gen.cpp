@@ -962,7 +962,8 @@ midend::Value* translate_node(
                 midend::Value* init_value =
                     translate_node(node->children[0], builder, current_func,
                                    local_vars, symbol->data_type);
-                create_type_tran(builder, init_value, symbol->data_type);
+                init_value =
+                    create_type_tran(builder, init_value, symbol->data_type);
                 if (init_value) {
                     builder.createStore(init_value, alloca);
                 }
