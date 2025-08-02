@@ -1129,7 +1129,8 @@ midend::Value* translate_node(
             builder.setInsertPoint(loopBB);
             translate_node(node->children[1], builder, current_func, local_vars,
                            need_type);
-            if (!in_break_continue_pos(builder.getInsertBlock()))
+            if (!builder.getInsertBlock()->getTerminator() &&
+                !in_break_continue_pos(builder.getInsertBlock()))
                 builder.createBr(condBB);
 
             // merge基本块
