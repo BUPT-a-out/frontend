@@ -7,6 +7,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "c_std_symbols.h"
+
 #define DEBUG
 
 #ifdef DEBUG
@@ -1191,7 +1193,8 @@ midend::Value* translate_node(
     }
 }
 
-void translate_func_def(ASTNodePtr node, midend::Module* module) {
+void translate_func_def(ASTNodePtr node, midend::Module* module,
+                        bool enable_mangle_c_std_symbol) {
     if (!node) return;
 
     SymbolPtr func_sym = node->data.symb_ptr;
@@ -1241,8 +1244,9 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
         midend::FunctionType::get(return_type, param_types);
 
     // 创建函数
-    midend::Function* func =
-        midend::Function::Create(func_type, func_name, param_names, module);
+    midend::Function* func = midend::Function::Create(
+        func_type, mangle_c_std_symbol(func_name, enable_mangle_c_std_symbol),
+        param_names, module);
     func_tab[func_sym->id] = func;
 
     // 创建基本块
@@ -1294,7 +1298,8 @@ void translate_func_def(ASTNodePtr node, midend::Module* module) {
 }
 
 // 从根节点开始翻译，处理函数定义
-void translate_root(ASTNodePtr node, midend::Module* module) {
+void translate_root(ASTNodePtr node, midend::Module* module,
+                    bool enable_mangle_c_std_symbol) {
     auto ctx = module->getContext();
 
     if (!node) return;
@@ -1360,7 +1365,7 @@ void translate_root(ASTNodePtr node, midend::Module* module) {
                 break;
             }
             case NODE_FUNC_DEF:
-                translate_func_def(child, module);
+                translate_func_def(child, module, enable_mangle_c_std_symbol);
                 break;
             default:
                 break;
@@ -1368,7 +1373,8 @@ void translate_root(ASTNodePtr node, midend::Module* module) {
     }
 }
 
-std::unique_ptr<midend::Module> generate_IR(FILE* file_in) {
+std::unique_ptr<midend::Module> generate_IR(FILE* file_in,
+                                            bool enable_mangle_c_std_symbol) {
     if (!file_in) return nullptr;
     yyin = file_in;
 
@@ -1392,7 +1398,7 @@ std::unique_ptr<midend::Module> generate_IR(FILE* file_in) {
 #endif
 
     add_runtime_lib_to_func_tab(module.get());
-    translate_root(root, module.get());
+    translate_root(root, module.get(), enable_mangle_c_std_symbol);
 
 #ifdef DEBUG
     if (module) {

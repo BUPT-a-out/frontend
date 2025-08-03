@@ -100,7 +100,8 @@ target("frontend")
         "flex_yacc/sysy_yacc.y",
         "flex_yacc/sysy_flex.l",
         "src/sy_parser/y.tab.c",
-        "src/sy_parser/lex.yy.c"
+        "src/sy_parser/lex.yy.c",
+        "src/c_std_symbols.cpp"
     )
     
     add_includedirs("include", {public = true})
