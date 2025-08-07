@@ -1,0 +1,146 @@
+Parsing completed successfully.
+
+--- Abstract Syntax Tree ---
++-- ROOT
+|   +-- FUNC_DEF: func (sym: func, id: 26)
+|   |   +-- LIST: FParams
+|   |   |   +-- ARRAY_DEF: a (sym: a, id: 27)
+|   |   |   +-- ARRAY_DEF: b (sym: b, id: 28)
+|   |   |   +-- ARRAY_DEF: c (sym: c, id: 29)
+|   |   +-- LIST: Block
+|   |   |   +-- ARRAY_DEF: d (sym: d, id: 30)
+|   |   |   |   +-- LIST: ArrayIniter
+|   |   |   +-- RETURN_STMT: func (sym: func, id: 26)
+|   |   |   |   +-- BINARY_OP: +
+|   |   |   |   |   +-- BINARY_OP: +
+|   |   |   |   |   |   +-- BINARY_OP: +
+|   |   |   |   |   |   |   +-- ARRAY_ACCESS: Dims (sym: a, id: 27)
+|   |   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   |   |   |   +-- ARRAY_ACCESS: Dims (sym: b, id: 28)
+|   |   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   |   |   |   +-- ARRAY_ACCESS: Dims (sym: c, id: 29)
+|   |   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   |   |   |   |   +-- CONST (int value: 2)
+|   |   |   |   |   +-- ARRAY_ACCESS: Dims (sym: d, id: 30)
+|   |   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   |   |   |   +-- CONST (int value: 2)
+|   |   |   |   |   |   +-- CONST (int value: 3)
+|   +-- FUNC_DEF: main (sym: main, id: 31)
+|   |   +-- LIST: FParams
+|   |   +-- LIST: Block
+|   |   |   +-- ARRAY_DEF: a (sym: a, id: 32)
+|   |   |   +-- ARRAY_DEF: b (sym: b, id: 33)
+|   |   |   +-- ARRAY_DEF: c (sym: c, id: 34)
+|   |   |   +-- FUNC_CALL: func (sym: func, id: 26)
+|   |   |   |   +-- ARRAY (sym: a, id: 32)
+|   |   |   |   +-- ARRAY (sym: b, id: 33)
+|   |   |   |   +-- ARRAY (sym: c, id: 34)
+|   |   |   +-- FUNC_CALL: func (sym: func, id: 26)
+|   |   |   |   +-- ARRAY_ACCESS: Dims (sym: c, id: 34)
+|   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   |   +-- CONST (int value: 1)
+|   |   |   |   +-- ARRAY_ACCESS: Dims (sym: c, id: 34)
+|   |   |   |   |   +-- CONST (int value: 0)
+|   |   |   |   +-- ARRAY (sym: c, id: 34)
+|   |   |   +-- RETURN_STMT: main (sym: main, id: 31)
+|   |   |   |   +-- CONST (int value: 0)
+
+--- Permanent Symbol Table ---
+ID    Name                 Type            Data Type  Function             Shape     
+-------------------------------------------------------------------------------------
+0     getint               function        int        N/A                  N/A       
+1     getch                function        int        N/A                  N/A       
+2     getfloat             function        float      N/A                  N/A       
+3     getarray             function        int        N/A                  N/A       
+4     array                array           int        getarray             0
+5     getfarray            function        int        N/A                  N/A       
+6     array                array           float      getfarray            0
+7     putint               function        void       N/A                  N/A       
+8     value                var             int        putint               N/A       
+9     putch                function        void       N/A                  N/A       
+10    value                var             int        putch                N/A       
+11    putfloat             function        void       N/A                  N/A       
+12    value                var             float      putfloat             N/A       
+13    putarray             function        void       N/A                  N/A       
+14    len                  var             int        putarray             N/A       
+15    array                array           int        putarray             0
+16    putfarray            function        void       N/A                  N/A       
+17    len                  var             int        putfarray            N/A       
+18    array                array           float      putfarray            0
+19    putf                 function        void       N/A                  N/A       
+20    format_string        var             char       putf                 N/A       
+21    value                var             int        putf                 N/A       
+22    starttime            function        void       N/A                  N/A       
+23    line                 var             int        starttime            N/A       
+24    stoptime             function        void       N/A                  N/A       
+25    line                 var             int        stoptime             N/A       
+26    func                 function        int        N/A                  N/A       
+27    a                    array           int        func                 0
+28    b                    array           int        func                 0 10
+29    c                    array           int        func                 0 10 10
+30    d                    array           int        func                 10 10 10 10
+31    main                 function        int        N/A                  N/A       
+32    a                    array           int        main                 10
+33    b                    array           int        main                 10 10
+34    c                    array           int        main                 10 10 10
+-------------------------------------------------------------------------------------
+
+--- Generated IR ---
+; ModuleID = 'main'
+
+define i32 @func(i32* %param.a.27, [10 x i32]* %param.b.28, [10 x [10 x i32]]* %param.c.29) {
+func.entry:
+  %d.30 = alloca [10 x [10 x [10 x [10 x i32]]]]
+  %d.30.initer = alloca i32
+  store i32 0, i32* %d.30.initer
+  br label %d.30.initer.while.cond
+d.30.initer.while.cond:
+  %4 = load i32, i32* %d.30.initer
+  %lt.5 = icmp slt i32 %4, 10000
+  br i1 %lt.5, label %d.30.initer.while.loop, label %d.30.initer.while.merge
+d.30.initer.while.loop:
+  %0 = load i32, i32* %d.30.initer
+  %1 = getelementptr [10000 x i32], [10 x [10 x [10 x [10 x i32]]]]* %d.30, i32 %0
+  store i32 0, i32* %1
+  %2 = load i32, i32* %d.30.initer
+  %3 = add i32 %2, 1
+  store i32 %3, i32* %d.30.initer
+  br label %d.30.initer.while.cond
+d.30.initer.while.merge:
+  %6 = getelementptr i32*, i32* %param.a.27, i32 0
+  %7 = load i32, i32* %6
+  %8 = getelementptr [10 x i32]*, [10 x i32]* %param.b.28, i32 0
+  %9 = getelementptr [10 x i32], [10 x i32]* %8, i32 1
+  %10 = load i32, i32* %9
+  %add.11 = add i32 %7, %10
+  %12 = getelementptr [10 x [10 x i32]]*, [10 x [10 x i32]]* %param.c.29, i32 0
+  %13 = getelementptr [10 x [10 x i32]], [10 x [10 x i32]]* %12, i32 1
+  %14 = getelementptr [10 x i32], [10 x i32]* %13, i32 2
+  %15 = load i32, i32* %14
+  %add.16 = add i32 %add.11, %15
+  %17 = getelementptr [10 x [10 x [10 x [10 x i32]]]], [10 x [10 x [10 x [10 x i32]]]]* %d.30, i32 0
+  %18 = getelementptr [10 x [10 x [10 x i32]]], [10 x [10 x [10 x i32]]]* %17, i32 1
+  %19 = getelementptr [10 x [10 x i32]], [10 x [10 x i32]]* %18, i32 2
+  %20 = getelementptr [10 x i32], [10 x i32]* %19, i32 3
+  %21 = load i32, i32* %20
+  %add.22 = add i32 %add.16, %21
+  ret i32 %add.22
+}
+
+define i32 @main() {
+main.entry:
+  %a.32 = alloca [10 x i32]
+  %b.33 = alloca [10 x [10 x i32]]
+  %c.34 = alloca [10 x [10 x [10 x i32]]]
+  %23 = call i32 @func([10 x i32]* %a.32, [10 x [10 x i32]]* %b.33, [10 x [10 x [10 x i32]]]* %c.34)
+  %24 = getelementptr [10 x [10 x [10 x i32]]], [10 x [10 x [10 x i32]]]* %c.34, i32 0
+  %25 = getelementptr [10 x [10 x i32]], [10 x [10 x i32]]* %24, i32 1
+  %26 = getelementptr [10 x [10 x [10 x i32]]], [10 x [10 x [10 x i32]]]* %c.34, i32 0
+  %27 = call i32 @func([10 x i32]* %25, [10 x [10 x i32]]* %26, [10 x [10 x [10 x i32]]]* %c.34)
+  ret i32 0
+}
+
+

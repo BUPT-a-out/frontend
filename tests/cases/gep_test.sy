@@ -1,0 +1,13 @@
+int func(int a[], int b[][10], int c[][10][10]) {
+    int d[10][10][10][10] = {};
+    return a[0] + b[0][1] + c[0][1][2] + d[0][1][2][3];
+}
+
+int main() {
+    int a[10];
+    int b[10][10];
+    int c[10][10][10];
+    func(a, b, c);
+    func(c[0][1], c[0], c);
+    return 0;
+}

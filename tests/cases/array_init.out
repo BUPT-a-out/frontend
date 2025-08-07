@@ -264,74 +264,76 @@ e.31.initer.while.loop:
   store i32 %49, i32* %e.31.initer
   br label %e.31.initer.while.cond
 e.31.initer.while.merge:
-  %52 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %d.30, i32 2, i32 1
-  %53 = load i32, i32* %52
-  %54 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %c.29, i32 2, i32 1
-  %55 = load i32, i32* %54
-  %56 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 0
-  store i32 %53, i32* %56
-  %57 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 1
-  store i32 %55, i32* %57
-  %58 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 2
-  store i32 3, i32* %58
-  %59 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 3
-  store i32 4, i32* %59
-  %60 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 4
-  store i32 5, i32* %60
-  %61 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 5
-  store i32 6, i32* %61
-  %62 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 6
-  store i32 7, i32* %62
-  %63 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 7
-  store i32 8, i32* %63
+  %52 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %d.30, i32 2
+  %53 = getelementptr [2 x i32], [2 x i32]* %52, i32 1
+  %54 = load i32, i32* %53
+  %55 = getelementptr [4 x [2 x i32]], [4 x [2 x i32]]* %c.29, i32 2
+  %56 = getelementptr [2 x i32], [2 x i32]* %55, i32 1
+  %57 = load i32, i32* %56
+  %58 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 0
+  store i32 %54, i32* %58
+  %59 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 1
+  store i32 %57, i32* %59
+  %60 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 2
+  store i32 3, i32* %60
+  %61 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 3
+  store i32 4, i32* %61
+  %62 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 4
+  store i32 5, i32* %62
+  %63 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 5
+  store i32 6, i32* %63
+  %64 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 6
+  store i32 7, i32* %64
+  %65 = getelementptr [8 x i32], [4 x [2 x i32]]* %e.31, i32 7
+  store i32 8, i32* %65
   %f.32.initer = alloca i32
   store i32 0, i32* %f.32.initer
   br label %f.32.initer.while.cond
 f.32.initer.while.cond:
-  %68 = load i32, i32* %f.32.initer
-  %lt.69 = icmp slt i32 %68, 8
-  br i1 %lt.69, label %f.32.initer.while.loop, label %f.32.initer.while.merge
+  %70 = load i32, i32* %f.32.initer
+  %lt.71 = icmp slt i32 %70, 8
+  br i1 %lt.71, label %f.32.initer.while.loop, label %f.32.initer.while.merge
 f.32.initer.while.loop:
-  %64 = load i32, i32* %f.32.initer
-  %65 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 %64
-  store i32 0, i32* %65
   %66 = load i32, i32* %f.32.initer
-  %67 = add i32 %66, 1
-  store i32 %67, i32* %f.32.initer
+  %67 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 %66
+  store i32 0, i32* %67
+  %68 = load i32, i32* %f.32.initer
+  %69 = add i32 %68, 1
+  store i32 %69, i32* %f.32.initer
   br label %f.32.initer.while.cond
 f.32.initer.while.merge:
-  %70 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 0
-  store i32 1, i32* %70
-  %71 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 1
-  store i32 2, i32* %71
-  %72 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 2
-  store i32 3, i32* %72
-  %73 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 4
-  store i32 4, i32* %73
-  %74 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 6
-  store i32 5, i32* %74
+  %72 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 0
+  store i32 1, i32* %72
+  %73 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 1
+  store i32 2, i32* %73
+  %74 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 2
+  store i32 3, i32* %74
+  %75 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 4
+  store i32 4, i32* %75
+  %76 = getelementptr [8 x i32], [4 x [2 x i32]]* %f.32, i32 6
+  store i32 5, i32* %76
   %g.33.initer = alloca i32
   store i32 0, i32* %g.33.initer
   br label %g.33.initer.while.cond
 g.33.initer.while.cond:
-  %79 = load i32, i32* %g.33.initer
-  %lt.80 = icmp slt i32 %79, 8
-  br i1 %lt.80, label %g.33.initer.while.loop, label %g.33.initer.while.merge
+  %81 = load i32, i32* %g.33.initer
+  %lt.82 = icmp slt i32 %81, 8
+  br i1 %lt.82, label %g.33.initer.while.loop, label %g.33.initer.while.merge
 g.33.initer.while.loop:
-  %75 = load i32, i32* %g.33.initer
-  %76 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 %75
-  store i32 0, i32* %76
   %77 = load i32, i32* %g.33.initer
-  %78 = add i32 %77, 1
-  store i32 %78, i32* %g.33.initer
+  %78 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 %77
+  store i32 0, i32* %78
+  %79 = load i32, i32* %g.33.initer
+  %80 = add i32 %79, 1
+  store i32 %80, i32* %g.33.initer
   br label %g.33.initer.while.cond
 g.33.initer.while.merge:
-  %81 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 0
-  store i32 1, i32* %81
-  %82 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 4
-  store i32 2, i32* %82
-  %83 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 6
-  store i32 3, i32* %83
+  %83 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 0
+  store i32 1, i32* %83
+  %84 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 4
+  store i32 2, i32* %84
+  %85 = getelementptr [8 x i32], [2 x [2 x [2 x i32]]]* %g.33, i32 6
+  store i32 3, i32* %85
   ret i32 0
 }
 

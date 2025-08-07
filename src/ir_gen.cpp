@@ -571,11 +571,19 @@ midend::Value* get_array_element_ptr(
 
     if (!array_ptr || indices.empty()) return nullptr;
 
-    return function_param_symbols.count(symbol->id)
-               ? builder.createGEP(array_ptr->getType(), array_ptr, indices,
-                                   std::to_string(var_idx++))
-               : builder.createGEP(array_type, array_ptr, indices,
-                                   std::to_string(var_idx++));
+    for (midend::Value* single_indice : indices) {
+        std::vector<midend::Value*> single_idx_vec;
+        single_idx_vec.push_back(single_indice);
+        array_ptr = builder.createGEP(array_type, array_ptr, single_idx_vec,
+                                      std::to_string(var_idx++));
+        if (array_type->isArrayType())
+            array_type = array_type->getSingleElementType();
+        else if (array_type->isPointerType())
+            array_type =
+                static_cast<midend::PointerType*>(array_type)->getElementType();
+    }
+
+    return array_ptr;
 }
 
 midend::Value* def_var(midend::IRBuilder& builder, SymbolPtr symbol,
