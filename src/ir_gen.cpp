@@ -371,7 +371,9 @@ void initialize_array_elements(
     // 循环变量
     midend::Type* var_type = builder.getContext()->getInt32Type();
     std::string var_name = get_symbol_name(symbol) + ".initer";
-    midend::Value* i_alloca = builder.createAlloca(var_type, nullptr, var_name);
+    midend::Instruction* i_alloca =
+        midend::AllocaInst::Create(var_type, nullptr, var_name);
+    current_func->getEntryBlock().push_front(i_alloca);
     // 初始化
     std::string current_block_id = std::to_string(block_idx++);
     builder.createStore(builder.getInt32(0), i_alloca);
